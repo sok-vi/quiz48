@@ -7,6 +7,7 @@ package quiz48.gui.init;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -15,6 +16,8 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
+import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.Test;
 import quiz48.gui.AppIcons;
@@ -26,6 +29,81 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeTestView {
+    
+    private static final class QuizTimer {
+        private long m_QuizTimer,
+                m_QuestionTimer, 
+                m_TimerValue;
+        private boolean m_Started;
+        private final Object m_Synch;
+        
+        public QuizTimer(boolean start) {
+            m_Synch = new Object();
+            synchronized(m_Synch) {
+                m_QuizTimer = 0;
+                m_QuestionTimer = 0;
+                m_Started = start;
+                m_TimerValue = 0;
+                if(start) { start(); }
+            }
+        }
+        
+        public QuizTimer() { this(false); }
+        
+        public final void update() {
+            synchronized(m_Synch) {
+                if(m_Started) {
+                    long newt = System.currentTimeMillis();
+                    m_QuestionTimer += newt - m_TimerValue;
+                    m_QuizTimer += newt - m_TimerValue;
+                    m_TimerValue = newt;
+                }
+            }
+        }
+        
+        public final void start() {
+            synchronized(m_Synch) {
+                if(!m_Started) {
+                    m_TimerValue = System.currentTimeMillis();
+                    m_Started = true;
+                }
+            }
+        }
+        
+        public final void stop() {
+            synchronized(m_Synch) {
+                if(m_Started) {
+                    update();
+                    m_Started = false;
+                }
+            }
+        }
+        
+        public final long getQuizTimer() {
+            synchronized(m_Synch) {
+                return m_QuizTimer;
+            }
+        }
+        
+        public final long getQuestionTimer() {
+            synchronized(m_Synch) {
+                return m_QuestionTimer;
+            }
+        }
+        
+        public final void resetQuizTimer() {
+            synchronized(m_Synch) {
+                m_QuizTimer = 0;
+            }
+        }
+        
+        public final void resetQuestionTimer() {
+            synchronized(m_Synch) {
+                m_QuestionTimer = 0;
+            }
+        }
+    }
+    
     public interface SetCurrentTest {
         void run(Test t);
     }
@@ -33,6 +111,9 @@ public class InitializeTestView {
     public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
         main.removeAll();
         main.setLayout(new BorderLayout());
+        
+        Pointer<JLabel> quiztl = new Pointer<>(),
+                questiontl = new Pointer<>();
         
         main.setLayout(new GridBagLayout());
         GridBagConstraints _cc = new GridBagConstraints();
@@ -64,7 +145,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("user48.png"));
+                setIcon(AppIcons.instance().get("user24.png"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -132,7 +213,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("user48.png"));
+                setIcon(AppIcons.instance().get("timer24.png"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -158,7 +239,10 @@ public class InitializeTestView {
             _cc0.insets = _is2;
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.EAST;
-            add(new JLabel("Логин:"), _cc0);
+            add(new JLabel() { {
+                setText(":");
+                setIcon(AppIcons.instance().get("timeout24.png"));
+            } }, _cc0);
             
             _cc0.gridx = 1;
             _cc0.gridy = 1;
@@ -170,6 +254,7 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
+                quiztl.put(this);
                 setText(u.getUserEntity().getLogin());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -200,7 +285,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("user48.png"));
+                setIcon(AppIcons.instance().get("timer24.png"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -226,7 +311,10 @@ public class InitializeTestView {
             _cc0.insets = _is2;
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.EAST;
-            add(new JLabel("Логин:"), _cc0);
+            add(new JLabel() { {
+                setText(":");
+                setIcon(AppIcons.instance().get("timeout24.png"));
+            } }, _cc0);
             
             _cc0.gridx = 1;
             _cc0.gridy = 1;
@@ -238,6 +326,7 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
+                questiontl.put(this);
                 setText(u.getUserEntity().getLogin());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -273,5 +362,16 @@ public class InitializeTestView {
         
         wnd.revalidate();
         wnd.repaint();
+        
+        QuizTimer myTimer = new QuizTimer();
+        final Timer time = new Timer(200, (e) -> {
+            myTimer.update();
+            EventQueue.invokeLater(() -> {
+                quiztl.get().setText(Long.toString(myTimer.getQuizTimer()));
+                questiontl.get().setText(Long.toString(myTimer.getQuestionTimer()));
+            });
+        });
+        myTimer.start();
+        time.start();
     }
 }
