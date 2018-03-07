@@ -11,6 +11,7 @@ import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.text.SimpleDateFormat;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -102,6 +103,13 @@ public class InitializeTestView {
                 m_QuestionTimer = 0;
             }
         }
+        
+        public static String durationFormat(long d, String format) {
+            int _h = (int)(d / (60 * 60 * 1000)),
+                    _m = (int)(d / (60 * 1000)) - _h * 60,
+                    _s = (int)(d / 1000) - _m * 60 - _h * 60 * 60;
+            return String.format(format, _h, _m, _s);
+        }
     }
     
     public interface SetCurrentTest {
@@ -112,8 +120,10 @@ public class InitializeTestView {
         main.removeAll();
         main.setLayout(new BorderLayout());
         
-        Pointer<JLabel> quiztl = new Pointer<>(),
-                questiontl = new Pointer<>();
+        Pointer<JLabel> quiztimer = new Pointer<>(),
+                quiztimeout = new Pointer<>(),
+                questiontimer = new Pointer<>(),
+                questiontimeout = new Pointer<>();
         
         main.setLayout(new GridBagLayout());
         GridBagConstraints _cc = new GridBagConstraints();
@@ -213,7 +223,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("timer24.png"));
+                setIcon(AppIcons.instance().get("timer24.gif"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -241,7 +251,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("timeout24.png"));
+                setIcon(AppIcons.instance().get("timeout24.gif"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -254,7 +264,7 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
-                quiztl.put(this);
+                quiztimer.put(this);
                 setText(u.getUserEntity().getLogin());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -285,7 +295,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("timer24.png"));
+                setIcon(AppIcons.instance().get("timer24.gif"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -313,7 +323,7 @@ public class InitializeTestView {
             _cc0.anchor = GridBagConstraints.EAST;
             add(new JLabel() { {
                 setText(":");
-                setIcon(AppIcons.instance().get("timeout24.png"));
+                setIcon(AppIcons.instance().get("timeout24.gif"));
             } }, _cc0);
             
             _cc0.gridx = 1;
@@ -326,7 +336,7 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
-                questiontl.put(this);
+                questiontimer.put(this);
                 setText(u.getUserEntity().getLogin());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -364,11 +374,21 @@ public class InitializeTestView {
         wnd.repaint();
         
         QuizTimer myTimer = new QuizTimer();
-        final Timer time = new Timer(200, (e) -> {
+        String format1 = "%1$02d:%2$02d:%3$02d",
+                format2 = "%1$02d %2$02d %3$02d";
+        Pointer<Boolean> usef1 = new Pointer<>(true);
+        Pointer<Integer> usefc1 = new Pointer<>(0);
+        final Timer time = new Timer(500, (e) -> {
+            usefc1.put(usefc1.get() + 1);
+            if(usefc1.get() == 2) {
+                usefc1.put(0);
+                usef1.put(!usef1.get());
+            }
             myTimer.update();
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
             EventQueue.invokeLater(() -> {
-                quiztl.get().setText(Long.toString(myTimer.getQuizTimer()));
-                questiontl.get().setText(Long.toString(myTimer.getQuestionTimer()));
+                quiztimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get() ? format1 : format2));
+                questiontimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get() ? format1 : format2));
             });
         });
         myTimer.start();
