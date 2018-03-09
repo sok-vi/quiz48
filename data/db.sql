@@ -40,13 +40,15 @@ CREATE INDEX quiz_repeat ON quiz (repeat);
 -- таблица со списком воросов
 CREATE TABLE query (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-    query VARCHAR(2048) NOT NULL, -- сам вопрос
+    query LONG VARCHAR NOT NULL, -- сам вопрос
     answer VARCHAR(1024) NOT NULL, -- сам ответ
     quiz_id INTEGER NOT NULL, -- ссылка на quiz.id
     sort INTEGER NOT NULL DEFAULT 0, -- сортировка вопросов в тесте
     time INTEGER NOT NULL DEFAULT 0, -- время - если 0 время не ограничено, иначе количество секунд ограничивающих ответ
     is_fix INTEGER NOT NULL DEFAULT 0, -- если 0, то необходимо ввести ответ. иначе выбрать вариант из answers
-    repeat INTEGER DEFAULT 1 -- 1 можно повторно отвечать на вопрос
+    repeat INTEGER DEFAULT 1, -- 1 можно повторно отвечать на вопрос
+    ext INTEGER DEFAULT 0, -- внешний ресурс в query записан путь от  ./content/
+    weight INTEGER DEFAULT 0 -- вес при расчёте балов
 );
 
 CREATE UNIQUE INDEX query_id ON query (id);

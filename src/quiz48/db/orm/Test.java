@@ -30,22 +30,45 @@ public class Test  {
     }
     
     public static void loadTest(ConnectDB conn, EntityAccess<Test> ea, quiz48.gui.User u) throws SQLException {
-        conn.executeQuery((s) -> {
-            ResultSet rs = s.executeQuery();
-            while (rs.next()) {
-                ea.getEntity(
-                        new Test(
-                                rs.getInt("id"), 
-                                rs.getString("name"), 
-                                rs.getInt("is_fix") == 0, 
-                                rs.getInt("count"), 
-                                rs.getInt("time"), 
-                                rs.getInt("repeat"),
-                                rs.getInt("sort"),
-                                rs.getInt("level")
-                        ));
-            }
-        }, "SELECT * FROM quiz ORDER BY sort, level ASC");
+        if(!u.isLogin()) {
+            conn.executeQuery((s) -> {
+                ResultSet rs = s.executeQuery();
+                while (rs.next()) {
+                    ea.getEntity(
+                            new Test(
+                                    rs.getInt("id"), 
+                                    rs.getString("name"), 
+                                    rs.getInt("is_fix") == 0, 
+                                    rs.getInt("count"), 
+                                    rs.getInt("time"), 
+                                    rs.getInt("repeat"),
+                                    rs.getInt("sort"),
+                                    rs.getInt("level")
+                            ));
+                }
+            }, "SELECT * FROM quiz ORDER BY sort, level ASC");
+        }
+        else {
+            conn.executeQuery((s) -> {
+                s.setInt(1, u.getUserEntity().ID);
+                ResultSet rs = s.executeQuery();
+                while (rs.next()) {
+                    ea.getEntity(
+                            new Test(
+                                    rs.getInt("id"), 
+                                    rs.getString("name"), 
+                                    rs.getInt("is_fix") == 0, 
+                                    rs.getInt("count"), 
+                                    rs.getInt("time"), 
+                                    rs.getInt("repeat"),
+                                    rs.getInt("sort"),
+                                    rs.getInt("level")
+                            ));
+                }
+            }, "SELECT * FROM quiz q WHERE (((q.is_fix=0) AND (q.repeat=1)) OR "
+                    + "((q.repeat=0) AND ((SELECT count(*) FROM quiz_result qr1 WHERE qr1.quiz_id=q.id AND qr1.user_id=?)=0))) "
+                    + "ORDER BY q.sort, q.level ASC");
+        }
     }
 
     @Override

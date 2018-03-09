@@ -104,11 +104,13 @@ public class InitializeTestView {
             }
         }
         
-        public static String durationFormat(long d, String format) {
+        public static String durationFormat(long d, boolean isTSPC) {
+            String format1 = "%1$02d:%2$02d:%3$02d",
+                    format2 = "%1$02d %2$02d %3$02d";
             int _h = (int)(d / (60 * 60 * 1000)),
                     _m = (int)(d / (60 * 1000)) - _h * 60,
                     _s = (int)(d / 1000) - _m * 60 - _h * 60 * 60;
-            return String.format(format, _h, _m, _s);
+            return String.format(isTSPC ? format1 : format2, _h, _m, _s);
         }
     }
     
@@ -374,8 +376,6 @@ public class InitializeTestView {
         wnd.repaint();
         
         QuizTimer myTimer = new QuizTimer();
-        String format1 = "%1$02d:%2$02d:%3$02d",
-                format2 = "%1$02d %2$02d %3$02d";
         Pointer<Boolean> usef1 = new Pointer<>(true);
         Pointer<Integer> usefc1 = new Pointer<>(0);
         final Timer time = new Timer(500, (e) -> {
@@ -387,8 +387,8 @@ public class InitializeTestView {
             myTimer.update();
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
             EventQueue.invokeLater(() -> {
-                quiztimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get() ? format1 : format2));
-                questiontimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get() ? format1 : format2));
+                quiztimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
+                questiontimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
             });
         });
         myTimer.start();
