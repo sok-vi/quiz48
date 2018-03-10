@@ -47,13 +47,13 @@ CREATE TABLE query (
     time INTEGER NOT NULL DEFAULT 0, -- время - если 0 время не ограничено, иначе количество секунд ограничивающих ответ
     is_fix INTEGER NOT NULL DEFAULT 0, -- если 0, то необходимо ввести ответ. иначе выбрать вариант из answers
     repeat INTEGER DEFAULT 1, -- 1 можно повторно отвечать на вопрос
-    ext INTEGER DEFAULT 0, -- внешний ресурс в query записан путь от  ./content/
+    ext INTEGER DEFAULT 0, -- внешний ресурс 1 - в query записан путь от  ./content/
     weight INTEGER DEFAULT 0 -- вес при расчёте балов
 );
 
 CREATE UNIQUE INDEX query_id ON query (id);
-CREATE UNIQUE INDEX query_v_id ON query (quiz_id);
-CREATE UNIQUE INDEX query_sort ON query (sort);
+CREATE INDEX query_quiz_id ON query (quiz_id);
+CREATE INDEX query_sort ON query (sort);
 CREATE INDEX query_repeat ON query (repeat);
 
 -- таблица со вариантами ответов

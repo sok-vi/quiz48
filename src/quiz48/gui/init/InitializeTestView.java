@@ -11,7 +11,9 @@ import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.LinkedList;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -19,10 +21,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import quiz48.Pointer;
+import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
+import quiz48.db.orm.Query;
 import quiz48.db.orm.Test;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
+import quiz48.gui.LoadingWindow;
 import quiz48.gui.User;
 
 /**
@@ -119,19 +124,28 @@ public class InitializeTestView {
     }
             
     public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
+        LinkedList<Query> querys = new LinkedList<>();
+        
+        TaskQueue.instance().addNewTask(() -> {
+            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка вопросов...");
+            try {
+                Query.loadQuery(conn, (q) -> {
+                    querys.add(q);
+                }, current);
+            } catch (SQLException ex) {
+            }
+            cb.exit();
+        });
+        
         main.removeAll();
         main.setLayout(new BorderLayout());
-        
-        Pointer<JLabel> quiztimer = new Pointer<>(),
-                quiztimeout = new Pointer<>(),
-                questiontimer = new Pointer<>(),
-                questiontimeout = new Pointer<>();
         
         main.setLayout(new GridBagLayout());
         GridBagConstraints _cc = new GridBagConstraints();
         Insets _is1 = new Insets(5, 5, 5, 5),
                 _is2 = new Insets(0, 0, 3, 3);
         
+        //формируем панель сверху
         _cc.gridx = 0;
         _cc.gridy = 0;
         _cc.weightx = 0;
@@ -183,7 +197,7 @@ public class InitializeTestView {
             _cc0.insets = _is2;
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.EAST;
-            add(new JLabel("Логин:"), _cc0);
+            add(new JLabel(":"), _cc0);
             
             _cc0.gridx = 1;
             _cc0.gridy = 1;
@@ -199,6 +213,11 @@ public class InitializeTestView {
                 setForeground(Color.blue);
             } }, _cc0);
         } }, _cc);
+        
+        //панель учёта времени всего теста
+        Pointer<JLabel> quizTimer = new Pointer<>(),
+                quizTimeout = new Pointer<>();
+        Pointer<Long> quizTimeoutValue = new Pointer<>();
         
         _cc.gridx = 0;
         _cc.gridy = 1;
@@ -238,40 +257,47 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
+                quizTimer.put(this);
                 setText(u.getUserEntity().getName());
                 setForeground(Color.blue);
             } }, _cc0);
             
-            _cc0.gridx = 0;
-            _cc0.gridy = 1;
-            _cc0.weightx = 0;
-            _cc0.weighty = 0;
-            _cc0.gridwidth = 1;
-            _cc0.gridheight = 1;
-            _cc0.insets = _is2;
-            _cc0.fill = GridBagConstraints.NONE;
-            _cc0.anchor = GridBagConstraints.EAST;
-            add(new JLabel() { {
-                setText(":");
-                setIcon(AppIcons.instance().get("timeout24.gif"));
-            } }, _cc0);
-            
-            _cc0.gridx = 1;
-            _cc0.gridy = 1;
-            _cc0.weightx = 0;
-            _cc0.weighty = 0;
-            _cc0.gridwidth = 1;
-            _cc0.gridheight = 1;
-            _cc0.insets = _is2;
-            _cc0.fill = GridBagConstraints.NONE;
-            _cc0.anchor = GridBagConstraints.WEST;
-            add(new JLabel() { {
-                quiztimer.put(this);
-                setText(u.getUserEntity().getLogin());
-                setForeground(Color.blue);
-            } }, _cc0);
+            if(current.time > 0) {
+                //общее время теста ограничено
+                quizTimeoutValue.put((long)(current.time * 1000));
+                _cc0.gridx = 0;
+                _cc0.gridy = 1;
+                _cc0.weightx = 0;
+                _cc0.weighty = 0;
+                _cc0.gridwidth = 1;
+                _cc0.gridheight = 1;
+                _cc0.insets = _is2;
+                _cc0.fill = GridBagConstraints.NONE;
+                _cc0.anchor = GridBagConstraints.EAST;
+                add(new JLabel() { {
+                    setText(":");
+                    setIcon(AppIcons.instance().get("timeout24.gif"));
+                } }, _cc0);
+
+                _cc0.gridx = 1;
+                _cc0.gridy = 1;
+                _cc0.weightx = 0;
+                _cc0.weighty = 0;
+                _cc0.gridwidth = 1;
+                _cc0.gridheight = 1;
+                _cc0.insets = _is2;
+                _cc0.fill = GridBagConstraints.NONE;
+                _cc0.anchor = GridBagConstraints.WEST;
+                add(new JLabel() { {
+                    quizTimeout.put(this);
+                    setText(u.getUserEntity().getLogin());
+                    setForeground(Color.blue);
+                } }, _cc0);
+            }
         } }, _cc);
         
+        //панель конкретоного вопроса
+        Pointer<JLabel> queryTimer = new Pointer<>();
         _cc.gridx = 0;
         _cc.gridy = 2;
         _cc.weightx = 0;
@@ -310,6 +336,7 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
+                queryTimer.put(this);
                 setText(u.getUserEntity().getName());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -338,7 +365,6 @@ public class InitializeTestView {
             _cc0.fill = GridBagConstraints.NONE;
             _cc0.anchor = GridBagConstraints.WEST;
             add(new JLabel() { {
-                questiontimer.put(this);
                 setText(u.getUserEntity().getLogin());
                 setForeground(Color.blue);
             } }, _cc0);
@@ -378,6 +404,13 @@ public class InitializeTestView {
         QuizTimer myTimer = new QuizTimer();
         Pointer<Boolean> usef1 = new Pointer<>(true);
         Pointer<Integer> usefc1 = new Pointer<>(0);
+
+        quizTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
+        queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
+        if(quizTimeout.get() != null) {
+            quizTimeout.get().setText(QuizTimer.durationFormat(quizTimeoutValue.get(), usef1.get()));
+        }
+        
         final Timer time = new Timer(500, (e) -> {
             usefc1.put(usefc1.get() + 1);
             if(usefc1.get() == 2) {
@@ -387,8 +420,18 @@ public class InitializeTestView {
             myTimer.update();
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
             EventQueue.invokeLater(() -> {
-                quiztimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
-                questiontimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
+                quizTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
+                if(quizTimeout.get() != null) {
+                    long quiz_timeout_balance = quizTimeoutValue.get() - myTimer.getQuizTimer();
+                    if(quiz_timeout_balance > 0) {
+                        quizTimeout.get().setText(QuizTimer.durationFormat(quiz_timeout_balance, usef1.get()));
+                    }
+                    else {
+                        quizTimeout.get().setText(QuizTimer.durationFormat(quiz_timeout_balance * -1, usef1.get()));
+                        quizTimeout.get().setForeground(Color.red);
+                    }
+                }
+                queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
             });
         });
         myTimer.start();
