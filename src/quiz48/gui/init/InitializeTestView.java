@@ -123,19 +123,8 @@ public class InitializeTestView {
         void run(Test t);
     }
             
-    public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
-        LinkedList<Query> querys = new LinkedList<>();
-        
-        TaskQueue.instance().addNewTask(() -> {
-            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка вопросов...");
-            try {
-                Query.loadQuery(conn, (q) -> {
-                    querys.add(q);
-                }, current);
-            } catch (SQLException ex) {
-            }
-            cb.exit();
-        });
+    public static void implInitialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current, LinkedList<Query> querys) {
+        Pointer<Integer> queryIndex = new Pointer<>(0);
         
         main.removeAll();
         main.setLayout(new BorderLayout());
@@ -436,5 +425,36 @@ public class InitializeTestView {
         });
         myTimer.start();
         time.start();
+    }
+    
+    public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
+        LinkedList<Query> querys = new LinkedList<>();
+        
+        TaskQueue.instance().addNewTask(() -> {
+            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка вопросов...");
+            try {
+                LoadingWindow.sleep(2);
+                Query.loadQuery(conn, (q) -> {
+                    querys.add(q);
+                }, current);
+                if(querys.size() > 0) {
+                    cb.setInformation("Построение списка вопросов...успешно");
+                }
+                else {
+                    cb.setInformation("Построение списка вопросов...пусто", Color.red);
+                }
+                LoadingWindow.sleep(2);
+            } catch (SQLException ex) {
+                cb.setInformation("Построение списка вопросов...ошибка", Color.red);
+                LoadingWindow.sleep(3);
+            }
+            cb.exit();
+            
+            if(querys.size() > 0) {
+                EventQueue.invokeLater(() -> { 
+                    InitializeTestView.implInitialize(wnd, main, bottom, initStartWindow, u, conn, current, querys); 
+                });
+            }
+        });
     }
 }
