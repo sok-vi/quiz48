@@ -134,7 +134,9 @@ public class InitializeTestView {
         Insets _is1 = new Insets(5, 5, 5, 5),
                 _is2 = new Insets(0, 0, 3, 3);
         
-        //формируем панель сверху
+        //левая панель
+        /////////////////////
+        //формируем панель с логином
         _cc.gridx = 0;
         _cc.gridy = 0;
         _cc.weightx = 0;
@@ -285,8 +287,11 @@ public class InitializeTestView {
             }
         } }, _cc);
         
-        //панель конкретоного вопроса
-        Pointer<JLabel> queryTimer = new Pointer<>();
+        //панель времени конкретоного вопроса
+        Pointer<JLabel> queryTimer = new Pointer<>(),
+                queryTimeout = new Pointer<>();
+        Pointer<Runnable> createQueryTimeoutLabels = new Pointer<>(),
+                deleteQueryTimeoutLabels = new Pointer<>();
         _cc.gridx = 0;
         _cc.gridy = 2;
         _cc.weightx = 0;
@@ -330,34 +335,49 @@ public class InitializeTestView {
                 setForeground(Color.blue);
             } }, _cc0);
             
-            _cc0.gridx = 0;
-            _cc0.gridy = 1;
-            _cc0.weightx = 0;
-            _cc0.weighty = 0;
-            _cc0.gridwidth = 1;
-            _cc0.gridheight = 1;
-            _cc0.insets = _is2;
-            _cc0.fill = GridBagConstraints.NONE;
-            _cc0.anchor = GridBagConstraints.EAST;
-            add(new JLabel() { {
-                setText(":");
-                setIcon(AppIcons.instance().get("timeout24.gif"));
-            } }, _cc0);
+            createQueryTimeoutLabels.put(() -> {
+                if(getComponentCount() > 2) {
+                    remove(2);
+                    remove(2);
+                    queryTimeout.put(null);
+                }
+            });
             
-            _cc0.gridx = 1;
-            _cc0.gridy = 1;
-            _cc0.weightx = 0;
-            _cc0.weighty = 0;
-            _cc0.gridwidth = 1;
-            _cc0.gridheight = 1;
-            _cc0.insets = _is2;
-            _cc0.fill = GridBagConstraints.NONE;
-            _cc0.anchor = GridBagConstraints.WEST;
-            add(new JLabel() { {
-                setText(u.getUserEntity().getLogin());
-                setForeground(Color.blue);
-            } }, _cc0);
+            createQueryTimeoutLabels.put(() -> {
+                _cc0.gridx = 0;
+                _cc0.gridy = 1;
+                _cc0.weightx = 0;
+                _cc0.weighty = 0;
+                _cc0.gridwidth = 1;
+                _cc0.gridheight = 1;
+                _cc0.insets = _is2;
+                _cc0.fill = GridBagConstraints.NONE;
+                _cc0.anchor = GridBagConstraints.EAST;
+                add(new JLabel() { {
+                    setText(":");
+                    setIcon(AppIcons.instance().get("timeout24.gif"));
+                } }, _cc0);
+
+                _cc0.gridx = 1;
+                _cc0.gridy = 1;
+                _cc0.weightx = 0;
+                _cc0.weighty = 0;
+                _cc0.gridwidth = 1;
+                _cc0.gridheight = 1;
+                _cc0.insets = _is2;
+                _cc0.fill = GridBagConstraints.NONE;
+                _cc0.anchor = GridBagConstraints.WEST;
+                add(new JLabel() { {
+                    queryTimeout.put(this);
+                    setText(u.getUserEntity().getLogin());
+                    setForeground(Color.blue);
+                } }, _cc0);
+            });
         } }, _cc);
+        
+        //панель с вопросом
+        Pointer<JLabel> queryTitleLabel = new Pointer<>(),
+                queryBodyLabel = new Pointer<>();
         
         _cc.gridx = 1;
         _cc.gridy = 0;
@@ -369,10 +389,54 @@ public class InitializeTestView {
         _cc.fill = GridBagConstraints.BOTH;
         _cc.anchor = GridBagConstraints.CENTER;
        main.add(new JPanel() { {
-            setBackground(Color.red);
+           setLayout(new BorderLayout());
+           add(new JPanel() { {
+               setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+               setLayout(new BorderLayout());
+               add(new JLabel() { {
+                   queryTitleLabel.put(this);
+                   setForeground(Color.blue);
+                   setHorizontalAlignment(JLabel.CENTER);
+                   setHorizontalTextPosition(JLabel.CENTER);
+                   java.awt.Font fnt = getFont();
+                   setFont(new java.awt.Font(fnt.getName(), java.awt.Font.BOLD, (int)(fnt.getSize() * 1.7)));
+               } }, BorderLayout.CENTER);
+           } }, BorderLayout.NORTH);
+           add(new JPanel() { {
+               setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+               setLayout(new BorderLayout());
+               add(new JLabel() { {
+                   queryBodyLabel.put(this);
+               } }, BorderLayout.CENTER);
+           } }, BorderLayout.CENTER);
+           add(new JPanel() { {
+               setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+               setLayout(new BorderLayout());
+               add(new JLabel() { {
+                   setText("opjkopjpokipoj0iojp");
+               } }, BorderLayout.CENTER);
+           } }, BorderLayout.SOUTH);
         } }, _cc);
         
         bottom.clearButtons();
+        Runnable initNewQuery = () -> {
+            Query currQuery = querys.get(queryIndex.get());
+            if(currQuery.time > 0) {
+                if(queryTimeout.get() == null) {
+                    createQueryTimeoutLabels.get().run();
+                }
+            }
+            else {
+                if(queryTimeout.get() == null) {
+                    deleteQueryTimeoutLabels.get().run();
+                }
+            }
+
+            queryTitleLabel.get().setText(current.name);
+            queryBodyLabel.get().setText(currQuery.Query);
+        };
+        
+        initNewQuery.run();
 
         bottom.addButton(new JButton() { {
             setText("Следующий вопрос>");
@@ -433,7 +497,7 @@ public class InitializeTestView {
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка вопросов...");
             try {
-                LoadingWindow.sleep(2);
+                //LoadingWindow.sleep(2);
                 Query.loadQuery(conn, (q) -> {
                     querys.add(q);
                 }, current);
@@ -443,7 +507,7 @@ public class InitializeTestView {
                 else {
                     cb.setInformation("Построение списка вопросов...пусто", Color.red);
                 }
-                LoadingWindow.sleep(2);
+                //LoadingWindow.sleep(2);
             } catch (SQLException ex) {
                 cb.setInformation("Построение списка вопросов...ошибка", Color.red);
                 LoadingWindow.sleep(3);

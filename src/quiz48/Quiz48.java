@@ -59,7 +59,7 @@ public class Quiz48 {
             runnable = () -> {
                 TaskQueue.instance().addNewTask(() -> {
                     LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(null, "Запуск...");//покажем окно загрузки
-                    LoadingWindow.sleep(1);
+                    //LoadingWindow.sleep(1);
                     cb.setInformation("Подключение к базе данных...");
                     try {
                         //LoadingWindow.sleep(2);
