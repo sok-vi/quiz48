@@ -21,10 +21,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import quiz48.Pointer;
+import quiz48.QuizTimer;
 import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.Query;
 import quiz48.db.orm.Test;
+import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
 import quiz48.gui.LoadingWindow;
@@ -36,94 +38,11 @@ import quiz48.gui.User;
  */
 public class InitializeTestView {
     
-    private static final class QuizTimer {
-        private long m_QuizTimer,
-                m_QuestionTimer, 
-                m_TimerValue;
-        private boolean m_Started;
-        private final Object m_Synch;
-        
-        public QuizTimer(boolean start) {
-            m_Synch = new Object();
-            synchronized(m_Synch) {
-                m_QuizTimer = 0;
-                m_QuestionTimer = 0;
-                m_Started = start;
-                m_TimerValue = 0;
-                if(start) { start(); }
-            }
-        }
-        
-        public QuizTimer() { this(false); }
-        
-        public final void update() {
-            synchronized(m_Synch) {
-                if(m_Started) {
-                    long newt = System.currentTimeMillis();
-                    m_QuestionTimer += newt - m_TimerValue;
-                    m_QuizTimer += newt - m_TimerValue;
-                    m_TimerValue = newt;
-                }
-            }
-        }
-        
-        public final void start() {
-            synchronized(m_Synch) {
-                if(!m_Started) {
-                    m_TimerValue = System.currentTimeMillis();
-                    m_Started = true;
-                }
-            }
-        }
-        
-        public final void stop() {
-            synchronized(m_Synch) {
-                if(m_Started) {
-                    update();
-                    m_Started = false;
-                }
-            }
-        }
-        
-        public final long getQuizTimer() {
-            synchronized(m_Synch) {
-                return m_QuizTimer;
-            }
-        }
-        
-        public final long getQuestionTimer() {
-            synchronized(m_Synch) {
-                return m_QuestionTimer;
-            }
-        }
-        
-        public final void resetQuizTimer() {
-            synchronized(m_Synch) {
-                m_QuizTimer = 0;
-            }
-        }
-        
-        public final void resetQuestionTimer() {
-            synchronized(m_Synch) {
-                m_QuestionTimer = 0;
-            }
-        }
-        
-        public static String durationFormat(long d, boolean isTSPC) {
-            String format1 = "%1$02d:%2$02d:%3$02d",
-                    format2 = "%1$02d %2$02d %3$02d";
-            int _h = (int)(d / (60 * 60 * 1000)),
-                    _m = (int)(d / (60 * 1000)) - _h * 60,
-                    _s = (int)(d / 1000) - _m * 60 - _h * 60 * 60;
-            return String.format(isTSPC ? format1 : format2, _h, _m, _s);
-        }
-    }
-    
     public interface SetCurrentTest {
         void run(Test t);
     }
             
-    public static void implInitialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current, LinkedList<Query> querys) {
+    public static void implInitialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current, LinkedList<Query> querys, TestResult tresult) {
         Pointer<Integer> queryIndex = new Pointer<>(0);
         
         main.removeAll();
@@ -395,11 +314,11 @@ public class InitializeTestView {
                setLayout(new BorderLayout());
                add(new JLabel() { {
                    queryTitleLabel.put(this);
-                   setForeground(Color.blue);
+                   //setForeground(Color.blue);
                    setHorizontalAlignment(JLabel.CENTER);
                    setHorizontalTextPosition(JLabel.CENTER);
-                   java.awt.Font fnt = getFont();
-                   setFont(new java.awt.Font(fnt.getName(), java.awt.Font.BOLD, (int)(fnt.getSize() * 1.7)));
+                   //java.awt.Font fnt = getFont();
+                   //setFont(new java.awt.Font(fnt.getName(), java.awt.Font.BOLD, (int)(fnt.getSize() * 1.7)));
                } }, BorderLayout.CENTER);
            } }, BorderLayout.NORTH);
            add(new JPanel() { {
@@ -432,7 +351,9 @@ public class InitializeTestView {
                 }
             }
 
-            queryTitleLabel.get().setText(current.name);
+            //queryTitleLabel.get().setText(current.name);
+            queryTitleLabel.get().setText(
+                    String.format("<html><div style=\"color: blue; font-size: 24pt;\"><strong>%1$s (<span style=\"color: green;\">вопрос №%2$s</span>)</strong></div></html>", current.name, Integer.toHexString(queryIndex.get() + 1)));
             queryBodyLabel.get().setText(currQuery.Query);
         };
         
@@ -493,9 +414,11 @@ public class InitializeTestView {
     
     public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
         LinkedList<Query> querys = new LinkedList<>();
+        Pointer<TestResult> tres = new Pointer<>();
         
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка вопросов...");
+            
             try {
                 //LoadingWindow.sleep(2);
                 Query.loadQuery(conn, (q) -> {
@@ -512,11 +435,22 @@ public class InitializeTestView {
                 cb.setInformation("Построение списка вопросов...ошибка", Color.red);
                 LoadingWindow.sleep(3);
             }
+            
+            try {
+                cb.setInformation("Создание списка результатов...");
+                //LoadingWindow.sleep(2);
+                tres.put(TestResult.createTestResult(conn, u.getUserEntity(), current));
+                cb.setInformation("Создание списка результатов...успешно");
+                //LoadingWindow.sleep(2);
+            } catch (SQLException ex) {
+                cb.setInformation("Создание списка результатов...ошибка", Color.red);
+                LoadingWindow.sleep(3);
+            }
             cb.exit();
             
-            if(querys.size() > 0) {
+            if((querys.size() > 0) && (tres.get() != null)) {
                 EventQueue.invokeLater(() -> { 
-                    InitializeTestView.implInitialize(wnd, main, bottom, initStartWindow, u, conn, current, querys); 
+                    InitializeTestView.implInitialize(wnd, main, bottom, initStartWindow, u, conn, current, querys, tres.get()); 
                 });
             }
         });

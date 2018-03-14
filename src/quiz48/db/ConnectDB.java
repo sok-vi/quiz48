@@ -60,19 +60,6 @@ public final class ConnectDB {
         return false;
     }
     
-    public interface Query {
-        void query(Statement s) throws SQLException, NullPointerException;
-    }
-    
-    public final void executeQuery(Query q) throws SQLException, NullPointerException {
-        synchronized(m_Synch) {
-            if((q == null) || !isConnected()) { throw new NullPointerException(); }
-            try(Statement s = m_Derby.createStatement()) {
-                q.query(s);
-            }
-        }
-    }
-    
     public interface ExQuery {
         void query(PreparedStatement ps) throws SQLException, NullPointerException;
     }
@@ -80,7 +67,7 @@ public final class ConnectDB {
     public final void executeQuery(ExQuery q, String sql) throws SQLException, NullPointerException {
         synchronized(m_Synch) {
             if((q == null) || !isConnected()) { throw new NullPointerException(); }
-            try(PreparedStatement s = m_Derby.prepareStatement(sql)) {
+            try(PreparedStatement s = m_Derby.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 q.query(s);
             }
         }

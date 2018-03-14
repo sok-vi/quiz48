@@ -71,8 +71,8 @@ CREATE TABLE quiz_result (
     user_id INTEGER NOT NULL, -- ссылка на user.id
     status INTEGER NOT NULL DEFAULT 0, -- 0 викторина не пройдена; 1 - викторина пройдена
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- дата начала викторины
-    time INTEGER NOT NULL DEFAULT 0, -- общее время виторины - обновляется после каждого ответа
-    duplicate INTEGER NOT NULL DEFAULT 0 -- викторина проходится второй раз
+    time INTEGER NOT NULL DEFAULT 0, -- общее время виторины в секундах - обновляется после каждого ответа
+    duplicate INTEGER NOT NULL DEFAULT 0 -- 1 - викторина проходится во второй раз
 );
 
 CREATE INDEX quiz_result_id ON quiz_result (id);
