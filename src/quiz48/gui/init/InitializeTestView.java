@@ -127,7 +127,8 @@ public class InitializeTestView {
         //панель учёта времени всего теста
         Pointer<JLabel> quizTimer = new Pointer<>(),
                 quizTimeout = new Pointer<>();
-        Pointer<Long> quizTimeoutValue = new Pointer<>();
+        Pointer<Long> quizTimeoutValue = new Pointer<>(),
+                queryTimeoutValue = new Pointer<>();
         
         _cc.gridx = 0;
         _cc.gridy = 1;
@@ -309,26 +310,23 @@ public class InitializeTestView {
         _cc.anchor = GridBagConstraints.CENTER;
        main.add(new JPanel() { {
            setLayout(new BorderLayout());
-           add(new JPanel() { {
+           add(new JPanel() { {//заголовок с указание теста и номера вопроса
                setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
                setLayout(new BorderLayout());
                add(new JLabel() { {
                    queryTitleLabel.put(this);
-                   //setForeground(Color.blue);
                    setHorizontalAlignment(JLabel.CENTER);
                    setHorizontalTextPosition(JLabel.CENTER);
-                   //java.awt.Font fnt = getFont();
-                   //setFont(new java.awt.Font(fnt.getName(), java.awt.Font.BOLD, (int)(fnt.getSize() * 1.7)));
                } }, BorderLayout.CENTER);
            } }, BorderLayout.NORTH);
-           add(new JPanel() { {
-               setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+           add(new JPanel() { {//панель с вопросом
+               setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
                setLayout(new BorderLayout());
                add(new JLabel() { {
                    queryBodyLabel.put(this);
                } }, BorderLayout.CENTER);
            } }, BorderLayout.CENTER);
-           add(new JPanel() { {
+           add(new JPanel() { {//натель с контролом для ввода результата
                setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
                setLayout(new BorderLayout());
                add(new JLabel() { {
@@ -337,7 +335,10 @@ public class InitializeTestView {
            } }, BorderLayout.SOUTH);
         } }, _cc);
         
-        bottom.clearButtons();
+        QuizTimer myTimer = new QuizTimer();
+        Pointer<Boolean> usef1 = new Pointer<>(true);
+        Pointer<Integer> usefc1 = new Pointer<>(0);
+
         Runnable initNewQuery = () -> {
             Query currQuery = querys.get(queryIndex.get());
             if(currQuery.time > 0) {
@@ -350,19 +351,40 @@ public class InitializeTestView {
                     deleteQueryTimeoutLabels.get().run();
                 }
             }
+            
+            if(queryTimeout.get() != null) {
+                queryTimeoutValue.put((long)currQuery.time * 1000);
+                queryTimeout.get().setText(QuizTimer.durationFormat(queryTimeoutValue.get(), usef1.get()));
+            }
+            
+            myTimer.resetQuestionTimer();
+            queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
 
-            //queryTitleLabel.get().setText(current.name);
             queryTitleLabel.get().setText(
-                    String.format("<html><div style=\"color: blue; font-size: 24pt;\"><strong>%1$s (<span style=\"color: green;\">вопрос №%2$s</span>)</strong></div></html>", current.name, Integer.toHexString(queryIndex.get() + 1)));
+                    String.format("<html>"
+                            + "<div style=\"color: blue; font-size: 24pt;\">"
+                            + "<strong>%1$s (<span style=\"color: green;\">вопрос №%2$s</span>)</strong>"
+                            + "</div>"
+                            + "</html>", current.name, Integer.toHexString(queryIndex.get() + 1)));
             queryBodyLabel.get().setText(currQuery.Query);
         };
         
+        bottom.clearButtons();
         initNewQuery.run();
 
         bottom.addButton(new JButton() { {
             setText("Следующий вопрос>");
             setIcon(AppIcons.instance().get("next_q32.png"));
-            addActionListener((e) -> { });
+            addActionListener((e) -> {
+                queryIndex.put(queryIndex.get() + 1);
+                if(queryIndex.get() < querys.size()) {
+                    //ещё остались вопросы --- переходим к следующему шагу
+                    initNewQuery.run();
+                }
+                else {
+                    //auf wiedersehen
+                }
+            });
         } });
         
         bottom.addButton(new JButton() { {
@@ -375,12 +397,7 @@ public class InitializeTestView {
         wnd.revalidate();
         wnd.repaint();
         
-        QuizTimer myTimer = new QuizTimer();
-        Pointer<Boolean> usef1 = new Pointer<>(true);
-        Pointer<Integer> usefc1 = new Pointer<>(0);
-
         quizTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
-        queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
         if(quizTimeout.get() != null) {
             quizTimeout.get().setText(QuizTimer.durationFormat(quizTimeoutValue.get(), usef1.get()));
         }
@@ -405,7 +422,18 @@ public class InitializeTestView {
                         quizTimeout.get().setForeground(Color.red);
                     }
                 }
+                
                 queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
+                if(queryTimeout.get() != null) {
+                    long query_timeout_balance = queryTimeoutValue.get() - myTimer.getQuestionTimer();
+                    if(query_timeout_balance > 0) {
+                        queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance, usef1.get()));
+                    }
+                    else {
+                        queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance * -1, usef1.get()));
+                        queryTimeout.get().setForeground(Color.red);
+                    }
+                }
             });
         });
         myTimer.start();

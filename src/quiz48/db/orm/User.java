@@ -82,13 +82,22 @@ public class User {
     }
     
     public static User createUser(ConnectDB conn, String login, String name, String pwd) throws SQLException {
+        Pointer<Integer> ID = new Pointer<>();
+        
         conn.executeQuery((s) -> {
             s.setString(1, login);
             s.setString(2, name);
             s.setString(3, md5.calculate(pwd));
             s.executeUpdate();
+            ResultSet rs = s.getGeneratedKeys();
+            if(rs.next()) {
+                ID.put(rs.getInt(1));
+            }
+            else {
+                throw new SQLException("fail");
+            }
         }, "INSERT INTO users (login, name, pwd) VALUES (?, ?, ?)");
         
-        return User.loadUser(conn, login, pwd);
+        return new User(ID.get(), login, name, false);
     }
 }

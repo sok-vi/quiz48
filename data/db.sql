@@ -69,7 +69,7 @@ CREATE TABLE quiz_result (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     quiz_id INTEGER NOT NULL, -- ссылка на quiz.id
     user_id INTEGER NOT NULL, -- ссылка на user.id
-    status INTEGER NOT NULL DEFAULT 0, -- 0 викторина не пройдена; 1 - викторина пройдена
+    status INTEGER NOT NULL DEFAULT 0, -- 0 викторина не пройдена; 1 - викторина пройдена; 2 - прекращена по таймауту
     date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- дата начала викторины
     time INTEGER NOT NULL DEFAULT 0, -- общее время виторины в секундах - обновляется после каждого ответа
     duplicate INTEGER NOT NULL DEFAULT 0 -- 1 - викторина проходится во второй раз
@@ -83,9 +83,9 @@ CREATE INDEX quiz_result_user_id ON quiz_result (user_id);
 CREATE TABLE query_result (
     quiz_result_id INTEGER NOT NULL, -- ссылка на quiz_result.id
     query_id INTEGER NOT NULL, -- ссылка на query.id
-    answer VARCHAR(1024) NOT NULL, -- ответ пользователя
-    time INTEGER NOT NULL, -- время в секундах ответа на вопрос
-    fail INTEGER NOT NULL DEFAULT 0 -- 0 - правильно; 1 - не правильно; 2 - превышен таймаут
+    answer VARCHAR(1024) NOT NULL DEFAULT '', -- ответ пользователя
+    time INTEGER NOT NULL DEFAULT 0, -- время в секундах ответа на вопрос
+    fail INTEGER NOT NULL DEFAULT 2 -- 0 - правильно; 1 - не правильно; 2 - превышен таймаут
 );
 
 CREATE INDEX query_result_quiz_result_id ON query_result (quiz_result_id);
