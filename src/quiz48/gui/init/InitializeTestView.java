@@ -12,19 +12,20 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.Timer;
 import quiz48.Pointer;
 import quiz48.QuizTimer;
 import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.Query;
+import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.Test;
 import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
@@ -41,8 +42,31 @@ public class InitializeTestView {
     public interface SetCurrentTest {
         void run(Test t);
     }
+    
+    private interface AnswerValue {
+        String getAnswerValue();
+    }
+    
+    private final class TextFieldValue implements AnswerValue {
+        private final JTextField textField;
+        
+        public TextFieldValue(JTextField tf) { textField = tf; }
+        
+        @Override
+        public String getAnswerValue() { return textField.getText(); }
+        
+    }
             
-    public static void implInitialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current, LinkedList<Query> querys, TestResult tresult) {
+    public static void implInitialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStartWindow, 
+            User u, 
+            ConnectDB conn, 
+            Test current, 
+            LinkedList<Query> querys, 
+            TestResult tresult) {
         Pointer<Integer> queryIndex = new Pointer<>(0);
         
         main.removeAll();
@@ -255,11 +279,13 @@ public class InitializeTestView {
                 setForeground(Color.blue);
             } }, _cc0);
             
-            createQueryTimeoutLabels.put(() -> {
+            deleteQueryTimeoutLabels.put(() -> {
                 if(getComponentCount() > 2) {
-                    remove(2);
-                    remove(2);
                     queryTimeout.put(null);
+                    remove(2);
+                    remove(2);
+                    revalidate();
+                    repaint();
                 }
             });
             
@@ -292,6 +318,8 @@ public class InitializeTestView {
                     setText(u.getUserEntity().getLogin());
                     setForeground(Color.blue);
                 } }, _cc0);
+                revalidate();
+                repaint();
             });
         } }, _cc);
         
@@ -338,6 +366,8 @@ public class InitializeTestView {
         QuizTimer myTimer = new QuizTimer();
         Pointer<Boolean> usef1 = new Pointer<>(true);
         Pointer<Integer> usefc1 = new Pointer<>(0);
+        Pointer<QueryResult> qresult = new Pointer<>();
+        Pointer<Timer> timerPtr = new Pointer<>();
 
         Runnable initNewQuery = () -> {
             Query currQuery = querys.get(queryIndex.get());
@@ -347,7 +377,7 @@ public class InitializeTestView {
                 }
             }
             else {
-                if(queryTimeout.get() == null) {
+                if(queryTimeout.get() != null) {
                     deleteQueryTimeoutLabels.get().run();
                 }
             }
@@ -376,6 +406,30 @@ public class InitializeTestView {
             setText("Следующий вопрос>");
             setIcon(AppIcons.instance().get("next_q32.png"));
             addActionListener((e) -> {
+                if(qresult.get() != null) {
+                    TaskQueue.instance().addNewTask(()->{
+                    timerPtr.get().stop();
+                    try {
+                        qresult.get().time((int)(myTimer.getQuestionTimer() / 1000), conn);
+                        qresult.get().answer("", conn);
+                    } catch (SQLException ex) {
+                    }
+                    qresult.put(null);
+                    timerPtr.get().start();
+                    });
+                }
+                else {
+                    TaskQueue.instance().addNewTask(()->{
+                        timerPtr.get().stop();
+                        try {
+                            qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), (int)(myTimer.getQuestionTimer() / 1000), "", QueryResult.fail.timeout));
+                        } catch (SQLException ex) {
+                            System.out.println(ex);
+                        }
+                        timerPtr.get().start();
+                    });
+                }
+                
                 queryIndex.put(queryIndex.get() + 1);
                 if(queryIndex.get() < querys.size()) {
                     //ещё остались вопросы --- переходим к следующему шагу
@@ -383,6 +437,8 @@ public class InitializeTestView {
                 }
                 else {
                     //auf wiedersehen
+                    timerPtr.get().stop();
+                    initStartWindow.run();
                 }
             });
         } });
@@ -409,7 +465,6 @@ public class InitializeTestView {
                 usef1.put(!usef1.get());
             }
             myTimer.update();
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
             EventQueue.invokeLater(() -> {
                 quizTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuizTimer(), usef1.get()));
                 if(quizTimeout.get() != null) {
@@ -430,12 +485,24 @@ public class InitializeTestView {
                         queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance, usef1.get()));
                     }
                     else {
+                        TaskQueue.instance().addNewTask(()->{
+                        if(qresult.get() != null) {
+                            timerPtr.get().stop();
+                            try {
+                                qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), 0, "", QueryResult.fail.timeout));
+                            } catch (SQLException ex) {
+                            }
+                            timerPtr.get().start();
+                        }
+                        });
+                        
                         queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance * -1, usef1.get()));
                         queryTimeout.get().setForeground(Color.red);
                     }
                 }
             });
         });
+        timerPtr.put(time);
         myTimer.start();
         time.start();
     }

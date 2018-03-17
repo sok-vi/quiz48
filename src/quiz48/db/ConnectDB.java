@@ -54,7 +54,8 @@ public final class ConnectDB {
     
     public final boolean isConnected() {
         try {
-            return (m_Derby != null) && !m_Derby.isClosed();
+            return (m_Derby != null) && 
+                    !m_Derby.isClosed();
         } catch (SQLException ex) { }
         
         return false;

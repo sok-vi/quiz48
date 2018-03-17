@@ -19,7 +19,7 @@ public class QueryResult {
         timeout(2) { };
         
         protected int value;
-        fail(int iv) { value = iv; }
+        private fail(int iv) { value = iv; }
         public int fail2int() { return value; }
     }
     
@@ -28,7 +28,7 @@ public class QueryResult {
     public final TestResult testResult;
     public final Query query;
     private int time;
-    private fail fail;
+    private fail result;
     private String answer;
     
     public QueryResult(TestResult tr, Query q, int time, String answer, fail fv) {
@@ -36,7 +36,40 @@ public class QueryResult {
         query = q;
         this.time = time;
         this.answer = answer;
-        fail = fv;
+        result = fv;
+    }
+    
+    public final int time() { return time; }
+    public final void time(int time/*в секундах*/, ConnectDB conn) throws SQLException {
+        conn.executeQuery((s) -> {
+            s.setInt(1, time);
+            s.setInt(2, testResult.ID);
+            s.setInt(3, query.ID);
+            s.executeUpdate();
+        }, "UPDATE query_result SET time=? WHERE quiz_result_id=? AND query_id=?");
+        this.time = time;
+    }
+    
+    public final String answer() { return answer; }
+    public final void answer(String answer, ConnectDB conn) throws SQLException {
+        conn.executeQuery((s) -> {
+            s.setString(1, answer);
+            s.setInt(2, testResult.ID);
+            s.setInt(3, query.ID);
+            s.executeUpdate();
+        }, "UPDATE query_result SET answer=? WHERE quiz_result_id=? AND query_id=?");
+        this.answer = answer;
+    }
+    
+    public final fail fail() { return result; }
+    public final void fail(fail fv, ConnectDB conn) throws SQLException {
+        conn.executeQuery((s) -> {
+            s.setInt(1, fv.fail2int());
+            s.setInt(2, testResult.ID);
+            s.setInt(3, query.ID);
+            s.executeUpdate();
+        }, "UPDATE query_result SET fail=? WHERE quiz_result_id=? AND query_id=?");
+        this.result = fv;
     }
     
     public static QueryResult saveQueryResult(ConnectDB conn, TestResult tr, Query q, int time, String answer, fail fv) throws SQLException {
@@ -46,6 +79,7 @@ public class QueryResult {
             s.setString(3, answer);
             s.setInt(4, time);
             s.setInt(5, fv.fail2int());
+            s.executeUpdate();
         }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail) VALUES(?, ?, ?, ?, ?)");
         
         return new QueryResult(tr, q, time, answer, fv);
