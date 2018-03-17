@@ -11,10 +11,12 @@ import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,13 +49,18 @@ public class InitializeTestView {
         String getAnswerValue();
     }
     
-    private final class TextFieldValue implements AnswerValue {
+    private static final class TextFieldValue implements AnswerValue {
         private final JTextField textField;
-        
         public TextFieldValue(JTextField tf) { textField = tf; }
-        
         @Override
         public String getAnswerValue() { return textField.getText(); }
+    }
+    
+    private static final class ComboBoxValue implements AnswerValue {
+        private final JComboBox<String> comboField;
+        public ComboBoxValue(JComboBox<String> cf) { comboField = cf; }
+        @Override
+        public String getAnswerValue() { return (String)comboField.getSelectedItem(); }
         
     }
             
@@ -325,7 +332,9 @@ public class InitializeTestView {
         
         //панель с вопросом
         Pointer<JLabel> queryTitleLabel = new Pointer<>(),
-                queryBodyLabel = new Pointer<>();
+                queryBodyLabel = new Pointer<>(),
+                queryAnswerLabel = new Pointer<>();
+        Pointer<JPanel> queryAnswerPanel = new Pointer<>();
         
         _cc.gridx = 1;
         _cc.gridy = 0;
@@ -357,8 +366,26 @@ public class InitializeTestView {
            add(new JPanel() { {//натель с контролом для ввода результата
                setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
                setLayout(new BorderLayout());
-               add(new JLabel() { {
-                   setText("opjkopjpokipoj0iojp");
+               add(new JPanel() { {
+                   setLayout(new BorderLayout());
+                   //панель в которой написано - выберите или введите название
+                   add(new JPanel() { {
+                       setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+                       setLayout(new BorderLayout());
+                       add(new JLabel() { {
+                           queryAnswerLabel.put(this);
+                       } }, BorderLayout.CENTER);
+                   } }, BorderLayout.WEST);
+                   //панель с контролом для ввода ответа
+                   add(new JPanel() { {
+                       setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+                       setLayout(new BorderLayout());
+                       queryAnswerPanel.put(this);
+                   } }, BorderLayout.CENTER);
+                   //весёлая иконка, приглашающая в вводу ответа
+                   add(new JLabel() { {
+                       setText("jhjhj");
+                   } }, BorderLayout.EAST);
                } }, BorderLayout.CENTER);
            } }, BorderLayout.SOUTH);
         } }, _cc);
@@ -368,6 +395,7 @@ public class InitializeTestView {
         Pointer<Integer> usefc1 = new Pointer<>(0);
         Pointer<QueryResult> qresult = new Pointer<>();
         Pointer<Timer> timerPtr = new Pointer<>();
+        Pointer<AnswerValue> answerPtr = new Pointer<>();
 
         Runnable initNewQuery = () -> {
             Query currQuery = querys.get(queryIndex.get());
@@ -387,7 +415,6 @@ public class InitializeTestView {
                 queryTimeout.get().setText(QuizTimer.durationFormat(queryTimeoutValue.get(), usef1.get()));
             }
             
-            myTimer.resetQuestionTimer();
             queryTimer.get().setText(QuizTimer.durationFormat(myTimer.getQuestionTimer(), usef1.get()));
 
             queryTitleLabel.get().setText(
@@ -397,6 +424,24 @@ public class InitializeTestView {
                             + "</div>"
                             + "</html>", current.name, Integer.toHexString(queryIndex.get() + 1)));
             queryBodyLabel.get().setText(currQuery.Query);
+            
+            queryAnswerPanel.get().removeAll();
+            if(currQuery.isFix) {
+                queryAnswerPanel.get().add(new JTextField() { {
+                    answerPtr.put(new TextFieldValue(this));
+                } }, BorderLayout.CENTER);
+                queryAnswerLabel.get().setText("Введите значение:");
+            }
+            else {
+                queryAnswerPanel.get().add(new JComboBox<String>() { {
+                    this.addItem("");
+                    for(int i = 0; i < currQuery.answers.size(); ++i) {
+                        this.addItem(currQuery.answers.get(i));
+                    }
+                    answerPtr.put(new ComboBoxValue(this));
+                } }, BorderLayout.CENTER);
+                queryAnswerLabel.get().setText("Выберите вариант из списка:");
+            }
         };
         
         bottom.clearButtons();
@@ -406,40 +451,72 @@ public class InitializeTestView {
             setText("Следующий вопрос>");
             setIcon(AppIcons.instance().get("next_q32.png"));
             addActionListener((e) -> {
-                if(qresult.get() != null) {
-                    TaskQueue.instance().addNewTask(()->{
-                    timerPtr.get().stop();
+                TaskQueue.instance().addNewTask(() -> {
+                    LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка следующего вопроса...");
+                    
                     try {
-                        qresult.get().time((int)(myTimer.getQuestionTimer() / 1000), conn);
-                        qresult.get().answer("", conn);
-                    } catch (SQLException ex) {
-                    }
-                    qresult.put(null);
-                    timerPtr.get().start();
-                    });
-                }
-                else {
-                    TaskQueue.instance().addNewTask(()->{
-                        timerPtr.get().stop();
-                        try {
-                            qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), (int)(myTimer.getQuestionTimer() / 1000), "", QueryResult.fail.timeout));
-                        } catch (SQLException ex) {
-                            System.out.println(ex);
+                        //сначала сохраним результат в бд
+                        //LoadingWindow.sleep(1);
+                        cb.setInformation("Обновление результатов...");
+                        //tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
+                        myTimer.stop();//остановили счётчик
+                        if(qresult.get() != null) {
+                            //если был превышен таймаут вопроса сущность в бд уже создана
+                            //обновим время
+                            qresult.get().time((int)(myTimer.getQuestionTimer() / 1000), conn);
+                            //обновим результат
+                            qresult.get().answer(answerPtr.get().getAnswerValue(), conn);
+                            qresult.put(null);//сбросили сущность бд
                         }
-                        timerPtr.get().start();
-                    });
-                }
-                
-                queryIndex.put(queryIndex.get() + 1);
-                if(queryIndex.get() < querys.size()) {
-                    //ещё остались вопросы --- переходим к следующему шагу
-                    initNewQuery.run();
-                }
-                else {
-                    //auf wiedersehen
-                    timerPtr.get().stop();
-                    initStartWindow.run();
-                }
+                        else {
+                            QueryResult.saveQueryResult(
+                                    conn, 
+                                    tresult, 
+                                    querys.get(queryIndex.get()), 
+                                    (int)(myTimer.getQuestionTimer() / 1000), 
+                                    answerPtr.get().getAnswerValue(), 
+                                    answerPtr.get().getAnswerValue().compareToIgnoreCase(
+                                            querys.get(queryIndex.get()).Answer) == 0 ? QueryResult.fail.ok : QueryResult.fail.fail);
+                            
+                        }
+
+                        //LoadingWindow.sleep(2);
+                        tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
+                        cb.setInformation("Вывод нового вопроса...");
+
+                        //установим счётчик на следующий вопрос
+                        queryIndex.put(queryIndex.get() + 1);
+                        if(queryIndex.get() < querys.size()) {
+                            //ещё остались вопросы --- переходим к следующему шагу
+                            EventQueue.invokeAndWait(() -> {
+                                initNewQuery.run();//вывод пороса
+                            });
+                        }
+                        else {
+                            //auf wiedersehen
+                            EventQueue.invokeAndWait(() -> {
+                                timerPtr.get().stop();//остановить таймер
+                                initStartWindow.run();//вывод результатов
+                            });
+                        }
+                        
+                        myTimer.resetQuestionTimer();//сбросили счётчик времени вороса
+                        myTimer.start();//запустили счётчик
+                    }
+                    catch(InterruptedException|InvocationTargetException exe) {
+                        cb.setInformation("Ошибка при обновлении...", Color.RED);
+                        LoadingWindow.sleep(3);
+                        System.exit(0);
+                    }
+                    catch(SQLException exes) {
+                        cb.setInformation("Ошибка базы данных...", Color.RED);
+                        LoadingWindow.sleep(3);
+                        //System.out.println(exes);
+                        exes.printStackTrace();
+                        System.exit(0);
+                    }
+                    cb.exit();
+                });
             });
         } });
         
@@ -485,15 +562,21 @@ public class InitializeTestView {
                         queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance, usef1.get()));
                     }
                     else {
-                        TaskQueue.instance().addNewTask(()->{
-                        if(qresult.get() != null) {
-                            timerPtr.get().stop();
-                            try {
-                                qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), 0, "", QueryResult.fail.timeout));
-                            } catch (SQLException ex) {
+                        TaskQueue.instance().addNewTask(() -> {
+                            if(qresult.get() == null) {
+                                LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Время на вопрос закончилось!!!");
+                                myTimer.stop();//остановили счётчик
+                                try {
+                                    LoadingWindow.sleep(2);
+                                    qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), 0, "", QueryResult.fail.timeout));
+                                } catch (SQLException ex) {
+                                    cb.setInformation("Ошибка базы данных", Color.red);
+                                    LoadingWindow.sleep(3);
+                                    System.exit(0);
+                                }
+                                myTimer.start();//запустили счётчик
+                                cb.exit();
                             }
-                            timerPtr.get().start();
-                        }
                         });
                         
                         queryTimeout.get().setText(QuizTimer.durationFormat(query_timeout_balance * -1, usef1.get()));

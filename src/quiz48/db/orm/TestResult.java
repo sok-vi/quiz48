@@ -16,7 +16,8 @@ import quiz48.db.ConnectDB;
  * @author vasya
  */
 public class TestResult {
-    public final int ID, time;
+    public final int ID;
+    private int time;
     public final User user;
     public final Test test;
     public final Timestamp date;
@@ -30,6 +31,16 @@ public class TestResult {
         this.date = date;
         this.duplicate = duplicate;
         this.passed = passed;
+    }
+    
+    public final int time() { return time; }
+    public final void time(int time, ConnectDB conn) throws SQLException {
+        conn.executeQuery((s) -> {
+            s.setInt(1, time);
+            s.setInt(2, ID);
+            s.execute();
+        }, "UPDATE \"quizresult\" q SET q.\"time\"=? WHERE q.\"id\"=?");
+        this.time = time;
     }
     
     public static TestResult createTestResult(ConnectDB conn, User u, Test t) throws SQLException {
@@ -47,13 +58,13 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "SELECT COUNT(*) AS CNT FROM quiz_result WHERE quiz_id=? AND user_id=?");
+        }, "SELECT COUNT(*) AS \"CNT\" FROM \"quizresult\" WHERE \"quiz_id\"=? AND \"user_id\"=?");
         
         //вставим наконец запись
         conn.executeQuery((s) -> {
             s.setInt(1, t.ID);
             s.setInt(2, u.ID);
-            s.setInt(3, dup.get());
+            s.setInt(3, 1);
             s.executeUpdate();
             ResultSet gkeys = s.getGeneratedKeys();
             if(gkeys.next()) {
@@ -62,7 +73,7 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "INSERT INTO quiz_result (quiz_id, user_id, duplicate) VALUES(?, ?, ?)");
+        }, "INSERT INTO \"quizresult\" (\"quiz_id\", \"user_id\", \"duplicate\") VALUES(?, ?, ?)");
         
         //получим все поля - в том числе и сгенерированные
         Pointer<TestResult> tr = new Pointer<>();
@@ -83,7 +94,7 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "SELECT * FROM quiz_result WHERE id=?");
+        }, "SELECT * FROM \"quizresult\" WHERE \"id\"=?");
         
         return tr.get();
     }

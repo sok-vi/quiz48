@@ -104,6 +104,7 @@ public class InitializeQuizListView {
                     //LoadingWindow.sleep(2);
                 } catch (SQLException ex) {
                     cb.setInformation("Построение списка заданий... ошибка", Color.red);
+                    ex.printStackTrace();
                     EventQueue.invokeLater(() -> {
                         wnd.dispatchEvent(new WindowEvent(wnd, WindowEvent.WINDOW_CLOSING));
                     });
