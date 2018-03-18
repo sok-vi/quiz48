@@ -19,7 +19,14 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeResultView {
-    public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn) {
+    public static void initialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStartWindow, 
+            User u, 
+            ConnectDB conn) {
+        
         main.removeAll();
         main.setLayout(new BorderLayout());
         

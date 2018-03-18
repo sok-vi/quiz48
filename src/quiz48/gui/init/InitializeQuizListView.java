@@ -9,6 +9,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import javax.swing.BorderFactory;
@@ -33,7 +35,16 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeQuizListView {
-    public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStatWindow, User u, ConnectDB conn, InitializeTestView.SetCurrentTest InitTestWindow) {
+    
+    public static void initialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStatWindow, 
+            User u, 
+            ConnectDB conn, 
+            InitializeTestView.SetCurrentTest InitTestWindow) {
+        
         bottom.clearButtons();
         main.removeAll();
         main.setLayout(new BorderLayout());
@@ -128,6 +139,18 @@ public class InitializeQuizListView {
         
         qList.addListSelectionListener((e) -> {
             startButton.get().setEnabled(isLogin.get() && (qList.getSelectedIndex() >= 0));
+        });
+        qList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                if((e.getClickCount() > 1) && isLogin.get()) {
+                    if(qList.getSelectedIndex() >= 0) {
+                        InitTestWindow.run(qList.getSelectedValue());
+                    }
+                }
+            }
+            
         });
         
         loadQuiz.run();

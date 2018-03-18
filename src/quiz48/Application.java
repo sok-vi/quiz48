@@ -13,6 +13,7 @@ import quiz48.gui.BottomPanel;
 import quiz48.gui.User;
 import quiz48.gui.init.InitializeMainWindow;
 import quiz48.gui.init.InitializeQuizListView;
+import quiz48.gui.init.InitializeResultQuestionsView;
 import quiz48.gui.init.InitializeResultView;
 import quiz48.gui.init.InitializeTestView;
 
@@ -64,6 +65,7 @@ public final class Application {
             Pointer<Runnable> initQuizListView = new Pointer<>();
             Pointer<Runnable> initResultView = new Pointer<>();
             Pointer<InitializeTestView.SetCurrentTest> initTestView = new Pointer<>();
+            Pointer<InitializeResultQuestionsView.SetCurrentTestResult> initResultQuestions = new Pointer<>();
             
             initQuizListView.put(() -> {
                 InitializeQuizListView.initialize(
@@ -81,7 +83,11 @@ public final class Application {
             });
             
             initTestView.put((t) -> {
-                InitializeTestView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, t);
+                InitializeTestView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, t, initResultQuestions.get());
+            });
+            
+            initResultQuestions.put((tr) -> {
+                InitializeResultQuestionsView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), initResultView.get(), m_Conn, tr);
             });
             
             initQuizListView.get().run();

@@ -73,7 +73,9 @@ public class InitializeTestView {
             ConnectDB conn, 
             Test current, 
             LinkedList<Query> querys, 
-            TestResult tresult) {
+            TestResult tresult, 
+            InitializeResultQuestionsView.SetCurrentTestResult initResultView) {
+        
         Pointer<Integer> queryIndex = new Pointer<>(0);
         
         main.removeAll();
@@ -370,7 +372,7 @@ public class InitializeTestView {
                    setLayout(new BorderLayout());
                    //панель в которой написано - выберите или введите название
                    add(new JPanel() { {
-                       setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+                       setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 0));
                        setLayout(new BorderLayout());
                        add(new JLabel() { {
                            queryAnswerLabel.put(this);
@@ -458,7 +460,7 @@ public class InitializeTestView {
                         //сначала сохраним результат в бд
                         //LoadingWindow.sleep(1);
                         cb.setInformation("Обновление результатов...");
-                        //tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
+                        tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
                         myTimer.stop();//остановили счётчик
                         if(qresult.get() != null) {
                             //если был превышен таймаут вопроса сущность в бд уже создана
@@ -496,7 +498,7 @@ public class InitializeTestView {
                             //auf wiedersehen
                             EventQueue.invokeAndWait(() -> {
                                 timerPtr.get().stop();//остановить таймер
-                                initStartWindow.run();//вывод результатов
+                                initResultView.run(tresult);//вывод результатов
                             });
                         }
                         
@@ -590,7 +592,16 @@ public class InitializeTestView {
         time.start();
     }
     
-    public static void initialize(JFrame wnd, JPanel main, BottomPanel bottom, Runnable initStartWindow, User u, ConnectDB conn, Test current) {
+    public static void initialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStartWindow, 
+            User u, 
+            ConnectDB conn, 
+            Test current, 
+            InitializeResultQuestionsView.SetCurrentTestResult initResultView) {
+        
         LinkedList<Query> querys = new LinkedList<>();
         Pointer<TestResult> tres = new Pointer<>();
         
@@ -628,7 +639,7 @@ public class InitializeTestView {
             
             if((querys.size() > 0) && (tres.get() != null)) {
                 EventQueue.invokeLater(() -> { 
-                    InitializeTestView.implInitialize(wnd, main, bottom, initStartWindow, u, conn, current, querys, tres.get()); 
+                    InitializeTestView.implInitialize(wnd, main, bottom, initStartWindow, u, conn, current, querys, tres.get(), initResultView); 
                 });
             }
         });
