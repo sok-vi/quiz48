@@ -398,6 +398,7 @@ public class InitializeTestView {
         Pointer<QueryResult> qresult = new Pointer<>();
         Pointer<Timer> timerPtr = new Pointer<>();
         Pointer<AnswerValue> answerPtr = new Pointer<>();
+        LinkedList<QueryResult> queryResults = new LinkedList<>();
 
         Runnable initNewQuery = () -> {
             Query currQuery = querys.get(queryIndex.get());
@@ -460,30 +461,31 @@ public class InitializeTestView {
                         //сначала сохраним результат в бд
                         //LoadingWindow.sleep(1);
                         cb.setInformation("Обновление результатов...");
-                        tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
                         myTimer.stop();//остановили счётчик
                         if(qresult.get() != null) {
                             //если был превышен таймаут вопроса сущность в бд уже создана
                             //обновим время
-                            qresult.get().time((int)(myTimer.getQuestionTimer() / 1000), conn);
+                            qresult.get().time((int)Math.round(((double)myTimer.getQuestionTimer()) / 1000), conn);
                             //обновим результат
                             qresult.get().answer(answerPtr.get().getAnswerValue(), conn);
+                            queryResults.add(qresult.get());
                             qresult.put(null);//сбросили сущность бд
                         }
                         else {
-                            QueryResult.saveQueryResult(
-                                    conn, 
-                                    tresult, 
-                                    querys.get(queryIndex.get()), 
-                                    (int)(myTimer.getQuestionTimer() / 1000), 
-                                    answerPtr.get().getAnswerValue(), 
-                                    answerPtr.get().getAnswerValue().compareToIgnoreCase(
-                                            querys.get(queryIndex.get()).Answer) == 0 ? QueryResult.fail.ok : QueryResult.fail.fail);
+                            queryResults.add(
+                                    QueryResult.saveQueryResult(
+                                            conn, 
+                                            tresult, 
+                                            querys.get(queryIndex.get()), 
+                                            (int)Math.round(((double)myTimer.getQuestionTimer()) / 1000), 
+                                            answerPtr.get().getAnswerValue(), 
+                                            answerPtr.get().getAnswerValue().compareToIgnoreCase(
+                                                    querys.get(queryIndex.get()).Answer) == 0 ? QueryResult.fail.ok : QueryResult.fail.fail));
                             
                         }
 
                         //LoadingWindow.sleep(2);
-                        tresult.time((int)(myTimer.getQuizTimer() / 1000), conn);
+                        tresult.time((int)Math.round(((double)myTimer.getQuizTimer()) / 1000), conn);
                         cb.setInformation("Вывод нового вопроса...");
 
                         //установим счётчик на следующий вопрос
@@ -498,7 +500,7 @@ public class InitializeTestView {
                             //auf wiedersehen
                             EventQueue.invokeAndWait(() -> {
                                 timerPtr.get().stop();//остановить таймер
-                                initResultView.run(tresult);//вывод результатов
+                                initResultView.run(tresult, queryResults);//вывод результатов
                             });
                         }
                         

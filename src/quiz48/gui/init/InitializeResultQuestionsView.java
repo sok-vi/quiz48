@@ -6,10 +6,12 @@
 package quiz48.gui.init;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import quiz48.db.ConnectDB;
+import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
@@ -21,7 +23,7 @@ import quiz48.gui.BottomPanel;
 public class InitializeResultQuestionsView {
     
     public interface  SetCurrentTestResult {
-        void run(TestResult r);
+        void run(TestResult r, List<QueryResult> qrs);
     }
     
     public static void initialize(
@@ -31,7 +33,8 @@ public class InitializeResultQuestionsView {
             Runnable initStartWindow, 
             Runnable initStatWindow, 
             ConnectDB conn, 
-            TestResult current) {
+            TestResult current,
+            List<QueryResult> qresults) {
         
         main.removeAll();
         main.setLayout(new BorderLayout());

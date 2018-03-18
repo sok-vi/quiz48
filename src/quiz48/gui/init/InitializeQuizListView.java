@@ -9,6 +9,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
@@ -82,7 +84,7 @@ public class InitializeQuizListView {
                 add(new JPanel() { { 
                     setLayout(new BorderLayout());
                     setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
-                    add(new JLabel(AppIcons.instance().get("super_cat.gif")), BorderLayout.CENTER);
+                    add(new JLabel(AppIcons.instance().get("start_cat.gif")), BorderLayout.CENTER);
                 } }, BorderLayout.CENTER);
             } }, BorderLayout.WEST);
             add(new JPanel() { {
@@ -131,7 +133,19 @@ public class InitializeQuizListView {
             startButton.get().setEnabled(false); 
         });
         u.addLoginListener((login) -> { 
-            if(isLogin.get() != login) { loadQuiz.run(); }
+            if(isLogin.get() != login) {
+                Test sel = qList.getSelectedValue();
+                loadQuiz.run(); //добавить выбор старого селекта
+                if(sel != null) {
+                    for(int i = 0; i < qListModel.getSize(); ++i) {
+                        Test itTest = qListModel.elementAt(i);
+                        if(itTest.ID == sel.ID) {
+                            qList.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
+            }
             isLogin.put(login);
             resultButton.get().setEnabled(login);
             startButton.get().setEnabled(login && (qList.getSelectedIndex() >= 0)); 
@@ -144,10 +158,22 @@ public class InitializeQuizListView {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                if((e.getClickCount() > 1) && isLogin.get()) {
-                    if(qList.getSelectedIndex() >= 0) {
-                        InitTestWindow.run(qList.getSelectedValue());
-                    }
+                if((e.getClickCount() > 1) && 
+                        isLogin.get() && 
+                        (qList.getSelectedIndex() >= 0)) {
+                    InitTestWindow.run(qList.getSelectedValue());
+                }
+            }
+            
+        });
+        qList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
+                if((e.getKeyCode() == KeyEvent.VK_ENTER) &&
+                        isLogin.get() && 
+                        (qList.getSelectedIndex() >= 0)) {
+                    InitTestWindow.run(qList.getSelectedValue());
                 }
             }
             

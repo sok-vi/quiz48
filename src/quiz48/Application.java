@@ -86,8 +86,8 @@ public final class Application {
                 InitializeTestView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, t, initResultQuestions.get());
             });
             
-            initResultQuestions.put((tr) -> {
-                InitializeResultQuestionsView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), initResultView.get(), m_Conn, tr);
+            initResultQuestions.put((tr, qrs) -> {
+                InitializeResultQuestionsView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), initResultView.get(), m_Conn, tr, qrs);
             });
             
             initQuizListView.get().run();

@@ -85,9 +85,11 @@ public final class QuizTimer {
     public static String durationFormat(long d, boolean isTSPC) {
         String format1 = "%1$02d:%2$02d:%3$02d",
                 format2 = "%1$02d %2$02d %3$02d";
-        int _h = (int)(d / (60 * 60 * 1000)),
-                _m = (int)(d / (60 * 1000)) - _h * 60,
-                _s = (int)(d / 1000) - _m * 60 - _h * 60 * 60;
+        int _s = (int)Math.round((double)d / 1000),
+                _m = _s / 60,
+                _h = _m / 60;
+        _m -= _h * 60;
+        _s -= _m * 60 + _h * 3600;
         return String.format(isTSPC ? format1 : format2, _h, _m, _s);
     }
 }
