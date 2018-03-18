@@ -44,7 +44,7 @@ public class QueryResult {
             s.setInt(2, testResult.ID);
             s.setInt(3, query.ID);
             s.executeUpdate();
-        }, "UPDATE queryresult SET time=? WHERE quiz_result_id=? AND query_id=?");
+        }, "UPDATE query_result SET time=? WHERE quiz_result_id=? AND query_id=?");
         this.time = time;
     }
     
@@ -55,7 +55,7 @@ public class QueryResult {
             s.setInt(2, testResult.ID);
             s.setInt(3, query.ID);
             s.executeUpdate();
-        }, "UPDATE queryresult SET answer=? WHERE quiz_result_id=? AND query_id=?");
+        }, "UPDATE query_result SET answer=? WHERE quiz_result_id=? AND query_id=?");
         this.answer = answer;
     }
     
@@ -66,7 +66,7 @@ public class QueryResult {
             s.setInt(2, testResult.ID);
             s.setInt(3, query.ID);
             s.executeUpdate();
-        }, "UPDATE queryresult SET fail=? WHERE quiz_result_id=? AND query_id=?");
+        }, "UPDATE query_result SET fail=? WHERE quiz_result_id=? AND query_id=?");
         this.result = fv;
     }
     
@@ -78,7 +78,7 @@ public class QueryResult {
             s.setInt(4, time);
             s.setInt(5, fv.fail2int());
             s.executeUpdate();
-        }, "INSERT INTO queryresult (quiz_result_id, query_id, answer, time, fail) VALUES(?, ?, ?, ?, ?)");
+        }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail) VALUES(?, ?, ?, ?, ?)");
         
         return new QueryResult(tr, q, time, answer, fv);
     }

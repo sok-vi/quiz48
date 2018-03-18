@@ -66,7 +66,7 @@ public class Test  {
                             ));
                 }
             }, "SELECT * FROM quiz q WHERE (((q.is_fix=0) AND (q.repeat=1)) OR "
-                    + "((q.repeat=0) AND ((SELECT count(*) FROM quizresult qr1 WHERE qr1.quiz_id=q.id AND qr1.user_id=?)=0))) "
+                    + "((q.repeat=0) AND ((SELECT count(*) FROM quiz_result qr1 WHERE qr1.quiz_id=q.id AND qr1.user_id=?)=0))) "
                     + "ORDER BY q.sort, q.level ASC");
         }
     }
