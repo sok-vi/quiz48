@@ -39,7 +39,7 @@ public class TestResult {
             s.setInt(1, time);
             s.setInt(2, ID);
             s.execute();
-        }, "UPDATE \"quizresult\" q SET q.\"time\"=? WHERE q.\"id\"=?");
+        }, "UPDATE quizresult q SET q.time=? WHERE q.id=?");
         this.time = time;
     }
     
@@ -58,7 +58,7 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "SELECT COUNT(*) AS \"CNT\" FROM \"quizresult\" WHERE \"quiz_id\"=? AND \"user_id\"=?");
+        }, "SELECT COUNT(*) AS CNT FROM quizresult WHERE quiz_id=? AND user_id=?");
         
         //вставим наконец запись
         conn.executeQuery((s) -> {
@@ -73,7 +73,7 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "INSERT INTO \"quizresult\" (\"quiz_id\", \"user_id\", \"duplicate\") VALUES(?, ?, ?)");
+        }, "INSERT INTO quizresult (quiz_id, user_id, duplicate) VALUES(?, ?, ?)");
         
         //получим все поля - в том числе и сгенерированные
         Pointer<TestResult> tr = new Pointer<>();
@@ -94,7 +94,7 @@ public class TestResult {
             else {
                 throw new SQLException("fail");
             }
-        }, "SELECT * FROM \"quizresult\" WHERE \"id\"=?");
+        }, "SELECT * FROM quizresult WHERE id=?");
         
         return tr.get();
     }

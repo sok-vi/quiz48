@@ -68,7 +68,10 @@ public final class ConnectDB {
     public final void executeQuery(ExQuery q, String sql) throws SQLException, NullPointerException {
         synchronized(m_Synch) {
             if((q == null) || !isConnected()) { throw new NullPointerException(); }
-            try(PreparedStatement s = m_Derby.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            try(PreparedStatement s = 
+                    ((sql.toUpperCase().indexOf("INSERT") == 0) ? 
+                            m_Derby.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS) : 
+                            m_Derby.prepareStatement(sql))) {
                 q.query(s);
             }
         }

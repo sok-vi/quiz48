@@ -66,7 +66,7 @@ public class Test  {
                             ));
                 }
             }, "SELECT * FROM quiz q WHERE (((q.is_fix=0) AND (q.repeat=1)) OR "
-                    + "((q.repeat=0) AND ((SELECT count(*) FROM \"quizresult\" qr1 WHERE qr1.\"quiz_id\"=q.id AND qr1.\"user_id\"=?)=0))) "
+                    + "((q.repeat=0) AND ((SELECT count(*) FROM quizresult qr1 WHERE qr1.quiz_id=q.id AND qr1.user_id=?)=0))) "
                     + "ORDER BY q.sort, q.level ASC");
         }
     }
@@ -77,7 +77,7 @@ public class Test  {
                 "<html><strong>%1$s</strong>%2$s%3$s</html>", 
                 name,
                 level > 0 ? String.format("&nbsp;<em>(сложность: %1$s)</em>", Integer.toString(level)) : "",
-                sort > 0 ? String.format("&nbsp;<u color=\"blue\">класс: %1$s</u>", Integer.toString(sort)) : ""
+                sort > 0 ? String.format("&nbsp;<u color=blue>класс: %1$s</u>", Integer.toString(sort)) : ""
                 );
     }
 
