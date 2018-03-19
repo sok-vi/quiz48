@@ -73,12 +73,13 @@ public class Test  {
 
     @Override
     public String toString() {
-        return String.format(
+/*        return String.format(
                 "<html><strong>%1$s</strong>%2$s%3$s</html>", 
                 name,
                 level > 0 ? String.format("&nbsp;<em>(сложность: %1$s)</em>", Integer.toString(level)) : "",
                 sort > 0 ? String.format("&nbsp;<u color=blue>класс: %1$s</u>", Integer.toString(sort)) : ""
-                );
+                );*/
+        return String.format("<html><strong>%1$s</strong></html>", name);
     }
 
     

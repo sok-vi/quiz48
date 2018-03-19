@@ -75,9 +75,9 @@ CREATE TABLE quiz_result (
     duplicate INTEGER NOT NULL DEFAULT 0 -- 1 - викторина проходится во второй раз
 );
 
-CREATE INDEX quiz_result_id ON quizresult (id);
-CREATE INDEX quiz_result_quiz_id ON quizresult (quiz_id);
-CREATE INDEX quiz_result_user_id ON quizresult (user_id);
+CREATE INDEX quiz_result_id ON quiz_result (id);
+CREATE INDEX quiz_result_quiz_id ON quiz_result (quiz_id);
+CREATE INDEX quiz_result_user_id ON quiz_result (user_id);
 
 -- таблица с конкретными ответами на воросы виторины
 CREATE TABLE query_result (
@@ -88,8 +88,8 @@ CREATE TABLE query_result (
     fail INTEGER NOT NULL DEFAULT 2 -- 0 - правильно; 1 - не правильно; 2 - превышен таймаут
 );
 
-CREATE INDEX query_result_quiz_result_id ON queryresult (quiz_result_id);
-CREATE INDEX query_result_query_id ON queryresult (query_id);
-CREATE INDEX query_result_fail ON queryresult (fail);
+CREATE INDEX query_result_quiz_result_id ON query_result (quiz_result_id);
+CREATE INDEX query_result_query_id ON query_result (query_id);
+CREATE INDEX query_result_fail ON query_result (fail);
 
 
