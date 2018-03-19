@@ -24,8 +24,17 @@ public class Query {
     public final boolean isFix;
     public final LinkedList<String> answers = new LinkedList<>();
     
-    private static String parseIMG() {
-        return "";
+    private static String contentPath(String contentPath) {
+        return PackageLocation.thisPackagePath + 
+                ("content/" + contentPath).replace(
+                        File.separatorChar == '\\' ? "/" : "\\", 
+                        File.separator);
+    }
+    /**
+     * @content-path@ заменяется на путь до ./content/
+     */
+    private static String parseIMG(String content) {
+        return content.replace("@content-path@", "file:" + contentPath(""));
     }
     
     public Query(int id, int time, String query, String answer, boolean external, boolean isFix, ConnectDB conn) throws SQLException {
@@ -41,10 +50,7 @@ public class Query {
         
         if(external) {
             String content = "<html><div stryle=\"color: red; font-size: 28pt;\"><strong>File not found.</strong></div></html>";
-            String file = PackageLocation.thisPackagePath + 
-                    ("content/" + query).replace(
-                            File.separatorChar == '\\' ? "/" : "\\", 
-                            File.separator);
+            String file = contentPath(query);
             File f_content = new File(file);
             if(f_content.exists()) {
                 try {
@@ -57,9 +63,9 @@ public class Query {
                 } catch (IOException ex) { }
             }
             
-            Query = content;
+            Query = parseIMG(content);
         }
-        else { Query = query; }
+        else { Query = parseIMG(query); }
     }
     
     public static void loadQuery(ConnectDB conn, EntityAccess<Query> ea, Test quiz) throws SQLException {

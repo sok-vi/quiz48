@@ -362,6 +362,10 @@ public class InitializeTestView {
                setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
                setLayout(new BorderLayout());
                add(new JLabel() { {
+                   setHorizontalAlignment(JLabel.CENTER);
+                   setHorizontalTextPosition(JLabel.CENTER);
+                   setVerticalAlignment(JLabel.CENTER);
+                   setVerticalTextPosition(JLabel.CENTER);
                    queryBodyLabel.put(this);
                } }, BorderLayout.CENTER);
            } }, BorderLayout.CENTER);
