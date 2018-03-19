@@ -72,7 +72,6 @@ public class User {
                             conn, 
                             (ue) -> {
                                 m_UserEntity = ue;
-                                pdlg.get().dispose();
                                 initializeUserPanel(wnd, up, conn);
                                 up.updateUI();
                             });

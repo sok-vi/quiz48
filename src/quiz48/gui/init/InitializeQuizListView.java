@@ -38,6 +38,10 @@ import quiz48.gui.User;
  */
 public class InitializeQuizListView {
     
+    private interface ReloadQuizList {
+        void run(int id);
+    }
+    
     public static void initialize(
             JFrame wnd, 
             JPanel main, 
@@ -105,7 +109,7 @@ public class InitializeQuizListView {
             addActionListener((e) -> { InitTestWindow.run(qList.getSelectedValue()); });
         } });
         
-        Runnable loadQuiz = () -> {
+        ReloadQuizList loadQuiz = (id) -> {
             TaskQueue.instance().addNewTask(() -> {
                 LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Построение списка заданий...");
                 //LoadingWindow.sleep(2);
@@ -123,6 +127,19 @@ public class InitializeQuizListView {
                     });
                     LoadingWindow.sleep(2);
                 }
+                
+                if(id >= 0) {
+                    EventQueue.invokeLater(() -> {
+                        for(int i = 0; i < qListModel.getSize(); ++i) {
+                            Test itTest = qListModel.elementAt(i);
+                            if(itTest.ID == id) {
+                                qList.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    });
+                }
+                
                 cb.exit();
             });
         };
@@ -135,16 +152,7 @@ public class InitializeQuizListView {
         u.addLoginListener((login) -> { 
             if(isLogin.get() != login) {
                 Test sel = qList.getSelectedValue();
-                loadQuiz.run(); //добавить выбор старого селекта
-                if(sel != null) {
-                    for(int i = 0; i < qListModel.getSize(); ++i) {
-                        Test itTest = qListModel.elementAt(i);
-                        if(itTest.ID == sel.ID) {
-                            qList.setSelectedIndex(i);
-                            break;
-                        }
-                    }
-                }
+                loadQuiz.run(sel != null ? sel.ID : -1);
             }
             isLogin.put(login);
             resultButton.get().setEnabled(login);
@@ -152,7 +160,10 @@ public class InitializeQuizListView {
         });
         
         qList.addListSelectionListener((e) -> {
-            startButton.get().setEnabled(isLogin.get() && (qList.getSelectedIndex() >= 0));
+            startButton.get().setEnabled(
+                            isLogin.get() && 
+                            (qList.getSelectedIndex() >= 0)
+                    );
         });
         qList.addMouseListener(new MouseAdapter() {
             @Override
@@ -179,7 +190,7 @@ public class InitializeQuizListView {
             
         });
         
-        loadQuiz.run();
+        loadQuiz.run(-1);
         wnd.revalidate();
         wnd.repaint();
     }

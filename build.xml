@@ -12,6 +12,7 @@
         <copy todir="${build.classes.dir}">
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
+                <include name="content/**"/>
             </fileset>
         </copy>    
         <description>Builds, tests, and runs the project quiz48.</description>
@@ -20,6 +21,7 @@
         <copy todir="${dist.dir}">
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
+                <include name="content/**"/>
             </fileset>
         </copy>    
         <description>Builds, tests, and runs the project quiz48.</description>
@@ -30,6 +32,7 @@
         <copy todir="${build.classes.dir}">
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
+                <include name="content/**"/>
             </fileset>
         </copy>
     </target>
