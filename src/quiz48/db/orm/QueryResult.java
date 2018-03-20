@@ -5,6 +5,7 @@
  */
 package quiz48.db.orm;
 
+import java.awt.Color;
 import java.sql.SQLException;
 import quiz48.db.ConnectDB;
 
@@ -21,6 +22,20 @@ public class QueryResult {
         protected int value;
         private fail(int iv) { value = iv; }
         public int fail2int() { return value; }
+        
+        public final String getResultString() {
+            switch(value) {
+                case 1:
+                    return "ошибка";
+                case 2:
+                    return "время";
+            }
+            return "правильно";
+        }
+        
+        public final Color getResultColor() {
+            return value == 0 ? Color.green : Color.red;
+        }
     }
     
     public final TestResult testResult;

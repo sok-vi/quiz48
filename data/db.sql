@@ -42,19 +42,21 @@ CREATE TABLE query (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     query LONG VARCHAR NOT NULL, -- сам вопрос
     answer VARCHAR(1024) NOT NULL, -- сам ответ
+    is_visible_answer_in_result INTEGER NOT NULL DEFAULT 0, -- 0 не показывать ответ в результатах тестов
     quiz_id INTEGER NOT NULL, -- ссылка на quiz.id
     sort INTEGER NOT NULL DEFAULT 0, -- сортировка вопросов в тесте
     time INTEGER NOT NULL DEFAULT 0, -- время - если 0 время не ограничено, иначе количество секунд ограничивающих ответ
     is_fix INTEGER NOT NULL DEFAULT 0, -- если 0, то необходимо ввести ответ. иначе выбрать вариант из answers
     repeat INTEGER DEFAULT 1, -- 1 можно повторно отвечать на вопрос
     ext INTEGER DEFAULT 0, -- внешний ресурс 1 - в query записан путь от  ./content/
-    weight INTEGER DEFAULT 0 -- вес при расчёте балов
+    weight INTEGER DEFAULT 1 -- вес при расчёте балов
 );
 
 CREATE UNIQUE INDEX query_id ON query (id);
 CREATE INDEX query_quiz_id ON query (quiz_id);
 CREATE INDEX query_sort ON query (sort);
 CREATE INDEX query_repeat ON query (repeat);
+CREATE INDEX query_is_visible_answer_in_result ON query (is_visible_answer_in_result);
 
 -- таблица со вариантами ответов
 CREATE TABLE answer (

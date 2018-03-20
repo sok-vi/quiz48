@@ -19,9 +19,9 @@ import quiz48.db.ConnectDB;
  * @author vasya
  */
 public class Query {
-    public final int ID, time;
+    public final int ID, time, weight;
     public final String Query, Answer;
-    public final boolean isFix;
+    public final boolean isFix, isVisibleAnswerInResult;
     public final LinkedList<String> answers = new LinkedList<>();
     
     private static String contentPath(String contentPath) {
@@ -37,11 +37,13 @@ public class Query {
         return content.replace("@content-path@", "file:" + contentPath(""));
     }
     
-    public Query(int id, int time, String query, String answer, boolean external, boolean isFix, ConnectDB conn) throws SQLException {
+    public Query(int id, int time, String query, String answer, boolean external, boolean isFix, boolean isVisibleAnswerInResult, int weight, ConnectDB conn) throws SQLException {
         ID = id;
         this.time = time;
         Answer = answer;
         this.isFix = isFix;
+        this.isVisibleAnswerInResult = isVisibleAnswerInResult;
+        this.weight = weight;
         if(!this.isFix) {
             quiz48.db.orm.Answer.loadAnswers(conn, (a) -> {
                 answers.add(a);
@@ -81,6 +83,8 @@ public class Query {
                                 rs.getString("answer"), 
                                 rs.getInt("ext") == 1, 
                                 rs.getInt("is_fix") == 0,
+                                rs.getInt("is_visible_answer_in_result") != 0,
+                                rs.getInt("weight"), 
                                 conn));
             }
         }, "SELECT * FROM query WHERE quiz_id=? ORDER BY sort");
