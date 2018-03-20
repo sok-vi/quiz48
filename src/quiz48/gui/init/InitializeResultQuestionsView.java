@@ -7,22 +7,21 @@ package quiz48.gui.init;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.EventQueue;
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.UIManager;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import quiz48.Pointer;
+import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
@@ -48,52 +47,6 @@ public class InitializeResultQuestionsView {
         }
     }
     
-    private final static class WeightValue {
-        private final double proc;
-        public WeightValue(double proc) { this.proc = proc; }
-        public final double getProcValue() { return proc; }
-    }
-    
-    private final static class WeightValueCellRenderer extends JPanel implements TableCellRenderer {
-        private final JLabel text = new JLabel();
-        private final JProgressBar prog = new JProgressBar(0, 100);
-        private final JPanel textPanel = new JPanel();
-        
-        {
-            setLayout(new BorderLayout());
-            textPanel.setLayout(new BorderLayout());
-            textPanel.add(text, BorderLayout.CENTER);
-            textPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
-            add(textPanel, BorderLayout.WEST);
-            add(prog, BorderLayout.CENTER);
-        }
-        
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            text.setText(String.format("%1$02.2f%%", ((WeightValue)value).getProcValue()));
-            prog.setValue((int)Math.round(((WeightValue)value).getProcValue())*7);
-            
-            if(hasFocus) { 
-                setBorder(UIManager.getBorder("Table.focusCellHighlightBorder")); 
-            }
-            else { 
-                setBorder(null); 
-            }
-            
-            if(isSelected) {
-                setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
-                textPanel.setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
-            }
-            else {
-                setBackground(UIManager.getColor("Table.background"));
-                textPanel.setBackground(UIManager.getColor("Table.background"));
-            }
-            
-            return this;
-        }
-        
-    }
-    
     public static void initialize(
             JFrame wnd, 
             JPanel main, 
@@ -104,12 +57,42 @@ public class InitializeResultQuestionsView {
             TestResult current,
             List<QueryResult> qresults) {
         
+        Pointer<Integer> sumWeight = new Pointer<>(0),
+                sumResult = new Pointer<>(0);
+        for(QueryResult qr : qresults) {
+            sumWeight.put(sumWeight.get() + qr.query.weight);
+            sumResult.put(sumResult.get() + (qr.fail() == QueryResult.fail.ok ? qr.query.weight : 0));
+        }
+        
+        if(sumWeight.get() == 0) { sumWeight.put(0); }
+        
         main.removeAll();
         main.setLayout(new BorderLayout());
         
         bottom.clearButtons();
         
-        main.add(new JPanel() { {} }, BorderLayout.NORTH);
+        main.add(new JPanel() { {
+            setLayout(new BorderLayout());
+            add(new JPanel() { {
+                setLayout(new BorderLayout());
+                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                add(
+                        new JLabel(
+                                String.format(
+                                        "<html>"
+                                        + "<div style=\"font-size: 24pt; color: blue;\">Тест: "
+                                        + "<span style=\"color: green;\"><strong>%1$s</strong></span>"
+                                                + "&nbsp;затрачено %2$s%3$s [дата теста: %4$s]"
+                                                + "</div>"
+                                        + "</html>", current.test.name, 
+                                        quiz48.QuizTimer.durationFormat(current.time() * 1000, true),
+                                        current.test.time > 0 ? 
+                                                String.format(" из %1$s", quiz48.QuizTimer.durationFormat(current.test.time * 1000, true)) : "", 
+                                        new SimpleDateFormat("HH:mm:ss dd.MM.yyyy").format(current.date))
+                        ), BorderLayout.CENTER);
+                add(new JLabel(), BorderLayout.EAST);
+            } }, BorderLayout.CENTER);
+        } }, BorderLayout.NORTH);
         main.add(new JPanel() { {
             setLayout(new BorderLayout());
             add(new JScrollPane(
@@ -121,8 +104,9 @@ public class InitializeResultQuestionsView {
                         * 3 - вес
                         */
                         setDefaultRenderer(QueryResult.fail.class, new ResultCellRenderer());
-                        setDefaultRenderer(WeightValue.class, new WeightValueCellRenderer());
+                        setDefaultRenderer(PercentCellValue.class, new PercentCellValue.PercentCellValueRenderer());
                         setRowMargin(2);
+                        setDragEnabled(false);
                        
                         setModel(new AbstractTableModel() {
                             @Override
@@ -141,7 +125,7 @@ public class InitializeResultQuestionsView {
                                     case 1:
                                         return qresults.get(rowIndex).fail();
                                     case 2:
-                                        return new WeightValue(qresults.get(rowIndex).query.weight);
+                                        return new PercentCellValue((double)qresults.get(rowIndex).query.weight * 100 / sumWeight.get());
                                 }
 
                                 return 0;
@@ -167,7 +151,7 @@ public class InitializeResultQuestionsView {
                                     case 1:
                                         return QueryResult.fail.class;
                                     case 2:
-                                        return WeightValue.class;
+                                        return PercentCellValue.class;
                                 }
                                 return super.getColumnClass(columnIndex); 
                             }
@@ -182,6 +166,23 @@ public class InitializeResultQuestionsView {
                     } }
             ), BorderLayout.CENTER);
         } }, BorderLayout.CENTER);
+        main.add(new JPanel() { {
+            setLayout(new BorderLayout());
+            add(new JPanel(), BorderLayout.CENTER);
+            add(new JPanel() { {
+                setLayout(new BorderLayout());
+                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                add(new JLabel(String.format(
+                                "<html>"
+                                        + "<div style=\"font-size: 30pt; color: black;\">"
+                                        + "<strong>"
+                                        + "Итог: <span style=\"color: green;\">%1$02.2f%%</span>"
+                                        + "</strong>"
+                                        + "</div>"
+                                        + "</html>", 
+                                (double)sumResult.get() * 100 / (double)sumWeight.get())), BorderLayout.CENTER);
+            } }, BorderLayout.EAST);
+        } }, BorderLayout.SOUTH);
 
         bottom.addButton(new JButton() { {
             setText("<К списку результатов тестов");

@@ -427,9 +427,9 @@ public class InitializeTestView {
             queryTitleLabel.get().setText(
                     String.format("<html>"
                             + "<div style=\"color: blue; font-size: 24pt;\">"
-                            + "<strong>%1$s (<span style=\"color: green;\">вопрос №%2$s</span>)</strong>"
+                            + "<strong>%1$s (<span style=\"color: green;\">вопрос %2$s из %3$s</span>)</strong>"
                             + "</div>"
-                            + "</html>", current.name, Integer.toHexString(queryIndex.get() + 1)));
+                            + "</html>", current.name, Integer.toString(queryIndex.get() + 1), Integer.toString(querys.size())));
             queryBodyLabel.get().setText(currQuery.Query);
             
             queryAnswerPanel.get().removeAll();
