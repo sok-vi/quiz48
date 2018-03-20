@@ -8,6 +8,7 @@ package quiz48.gui.init;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.util.List;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -15,9 +16,13 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
@@ -51,17 +56,39 @@ public class InitializeResultQuestionsView {
     
     private final static class WeightValueCellRenderer extends JPanel implements TableCellRenderer {
         private final JLabel text = new JLabel();
-        private final JProgressBar prog = new JProgressBar();
+        private final JProgressBar prog = new JProgressBar(0, 100);
+        private final JPanel textPanel = new JPanel();
         
         {
             setLayout(new BorderLayout());
-            add(text, BorderLayout.WEST);
+            textPanel.setLayout(new BorderLayout());
+            textPanel.add(text, BorderLayout.CENTER);
+            textPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+            add(textPanel, BorderLayout.WEST);
             add(prog, BorderLayout.CENTER);
         }
         
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            text.setText(String.format("%1$f", ((WeightValue)value).getProcValue()));
+            text.setText(String.format("%1$02.2f%%", ((WeightValue)value).getProcValue()));
+            prog.setValue((int)Math.round(((WeightValue)value).getProcValue())*7);
+            
+            if(hasFocus) { 
+                setBorder(UIManager.getBorder("Table.focusCellHighlightBorder")); 
+            }
+            else { 
+                setBorder(null); 
+            }
+            
+            if(isSelected) {
+                setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
+                textPanel.setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
+            }
+            else {
+                setBackground(UIManager.getColor("Table.background"));
+                textPanel.setBackground(UIManager.getColor("Table.background"));
+            }
+            
             return this;
         }
         
@@ -93,59 +120,65 @@ public class InitializeResultQuestionsView {
                         * 2 - результат
                         * 3 - вес
                         */
-                       setDefaultRenderer(QueryResult.fail.class, new ResultCellRenderer());
-                       setDefaultRenderer(WeightValue.class, new WeightValueCellRenderer());
+                        setDefaultRenderer(QueryResult.fail.class, new ResultCellRenderer());
+                        setDefaultRenderer(WeightValue.class, new WeightValueCellRenderer());
+                        setRowMargin(2);
                        
-                       setModel(new AbstractTableModel() {
-                           @Override
-                           public int getRowCount() { return qresults.size(); }
+                        setModel(new AbstractTableModel() {
+                            @Override
+                            public int getRowCount() { return qresults.size(); }
 
-                           @Override
-                           public int getColumnCount() {
-                               return 3;
-                           }
+                            @Override
+                            public int getColumnCount() {
+                                return 3;
+                            }
 
-                           @Override
-                           public Object getValueAt(int rowIndex, int columnIndex) {
-                               switch(columnIndex) {
-                                   case 0:
-                                       return rowIndex + 1;
-                                   case 1:
-                                       return qresults.get(rowIndex).fail();
-                                   case 2:
-                                       return new WeightValue(qresults.get(rowIndex).query.weight);
-                               }
+                            @Override
+                            public Object getValueAt(int rowIndex, int columnIndex) {
+                                switch(columnIndex) {
+                                    case 0:
+                                        return rowIndex + 1;
+                                    case 1:
+                                        return qresults.get(rowIndex).fail();
+                                    case 2:
+                                        return new WeightValue(qresults.get(rowIndex).query.weight);
+                                }
 
-                               return 0;
-                           }
+                                return 0;
+                            }
 
-                           @Override
-                           public String getColumnName(int column) {
-                               switch(column) {
-                                   case 0:
-                                       return "Номер вопроса";
-                                   case 1:
-                                       return "Результат";
-                                   case 2:
-                                       return "Вес, %";
-                               }
+                            @Override
+                            public String getColumnName(int column) {
+                                switch(column) {
+                                    case 0:
+                                        return "Номер вопроса";
+                                    case 1:
+                                        return "Результат";
+                                    case 2:
+                                        return "Вес, %";
+                                }
 
-                               return super.getColumnName(column);
-                           }
+                                return super.getColumnName(column);
+                            }
 
-                           @Override
-                           public Class<?> getColumnClass(int columnIndex) {
-                               switch(columnIndex) {
-                                   case 1:
-                                       return QueryResult.fail.class;
-                                   case 2:
-                                       return WeightValue.class;
-                               }
-                               return super.getColumnClass(columnIndex); 
-                           }
-                           
-                           
-                       });
+                            @Override
+                            public Class<?> getColumnClass(int columnIndex) {
+                                switch(columnIndex) {
+                                    case 1:
+                                        return QueryResult.fail.class;
+                                    case 2:
+                                        return WeightValue.class;
+                                }
+                                return super.getColumnClass(columnIndex); 
+                            }
+
+
+                        });
+                        
+                        final Pointer<JTable> table = new Pointer<>(this);
+                        getSelectionModel().addListSelectionListener((e) -> {
+                            table.get().getSelectedRow();
+                        }) ;
                     } }
             ), BorderLayout.CENTER);
         } }, BorderLayout.CENTER);
