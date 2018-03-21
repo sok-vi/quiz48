@@ -98,6 +98,7 @@ public class InitializeResultQuestionsView {
         } }, BorderLayout.NORTH);
         main.add(new JPanel() { {
             setLayout(new BorderLayout());
+            setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
             add(new JScrollPane(
                     new JTable() { {
                         /**

@@ -6,9 +6,12 @@
 package quiz48.gui.init;
 
 import java.awt.BorderLayout;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import quiz48.db.ConnectDB;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
@@ -29,6 +32,23 @@ public class InitializeResultView {
         
         main.removeAll();
         main.setLayout(new BorderLayout());
+        
+        //верхняя панель
+        main.add(new JPanel() { {
+        } }, BorderLayout.NORTH);
+        //таблица
+        main.add(new JPanel() { {
+            setLayout(new BorderLayout());
+            setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
+            add(new JScrollPane(
+                    new JTable() { {
+                        
+                    } }
+            ), BorderLayout.CENTER);
+        } }, BorderLayout.CENTER);
+        //нижняя панель
+        main.add(new JPanel() { {
+        } }, BorderLayout.SOUTH);
         
         bottom.clearButtons();
 
