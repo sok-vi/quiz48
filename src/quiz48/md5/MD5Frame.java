@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import quiz48.Pointer;
+import quiz48.WindowLocation;
 
 /**
  *
@@ -113,9 +114,6 @@ public class MD5Frame extends JFrame {
 
         pack();
 
-        Toolkit t = Toolkit.getDefaultToolkit();
-        Dimension ss = t.getScreenSize();
-        setLocation((int)((ss.getWidth() - getWidth()) / 2), 
-                (int)((ss.getHeight() - getHeight()) / 2));
+        WindowLocation.WindowSetCenterScreenLocation(this);
     }
 }

@@ -9,6 +9,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -106,7 +108,12 @@ public class InitializeQuizListView {
             setIcon(AppIcons.instance().get("start32.png"));
             setEnabled(isLogin.get());
             startButton.put(this);
-            addActionListener((e) -> { InitTestWindow.run(qList.getSelectedValue()); });
+            addActionListener((e) -> { 
+                if(qList.getSelectedIndex() >= 0) {
+                    InitTestWindow.run(qList.getSelectedValue()); 
+                }
+                else { startButton.get().setEnabled(false); }
+            });
         } });
         
         ReloadQuizList loadQuiz = (id) -> {
@@ -187,7 +194,6 @@ public class InitializeQuizListView {
                     InitTestWindow.run(qList.getSelectedValue());
                 }
             }
-            
         });
         
         loadQuiz.run(-1);

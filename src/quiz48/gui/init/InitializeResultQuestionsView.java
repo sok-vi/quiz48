@@ -5,10 +5,11 @@
  */
 package quiz48.gui.init;
 
+import quiz48.gui.PercentCellValue;
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.EventQueue;
-import java.lang.reflect.InvocationTargetException;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.swing.BorderFactory;
@@ -18,15 +19,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import quiz48.Pointer;
-import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
+import quiz48.gui.QueryResultDetailViewDlg;
 
 /**
  *
@@ -80,17 +82,18 @@ public class InitializeResultQuestionsView {
                         new JLabel(
                                 String.format(
                                         "<html>"
-                                        + "<div style=\"font-size: 24pt; color: blue;\">Тест: "
-                                        + "<span style=\"color: green;\"><strong>%1$s</strong></span>"
-                                                + "&nbsp;затрачено %2$s%3$s [дата теста: %4$s]"
-                                                + "</div>"
+                                        + "<div style=\"font-size: 24pt; color: blue;\">Тест: <span style=\"color: green;\"><strong>%1$s</strong></span></div>"
+                                        + "<div style=\"font-size: 20pt; color: blue;\">Затрачено: <span style=\"color: green;\"><strong>%2$s%3$s</strong></span></div>"
+                                        + "<div style=\"font-size: 20pt; color: blue;\">Дата теста: <span style=\"color: green;\"><strong>%4$s</strong></span></div>"
+                                                + "%5$s"
                                         + "</html>", current.test.name, 
                                         quiz48.QuizTimer.durationFormat(current.time() * 1000, true),
                                         current.test.time > 0 ? 
                                                 String.format(" из %1$s", quiz48.QuizTimer.durationFormat(current.test.time * 1000, true)) : "", 
-                                        new SimpleDateFormat("HH:mm:ss dd.MM.yyyy").format(current.date))
+                                        new SimpleDateFormat("HH:mm:ss dd.MM.yyyy").format(current.date), 
+                                        current.duplicate ? "<div style=\"font-size: 20pt; color: white;background-color: red;padding:3px;\">Повторно</div>" : "")
                         ), BorderLayout.CENTER);
-                add(new JLabel(), BorderLayout.EAST);
+                add(new JLabel(AppIcons.instance().get("test_result64.png")), BorderLayout.EAST);
             } }, BorderLayout.CENTER);
         } }, BorderLayout.NORTH);
         main.add(new JPanel() { {
@@ -107,6 +110,7 @@ public class InitializeResultQuestionsView {
                         setDefaultRenderer(PercentCellValue.class, new PercentCellValue.PercentCellValueRenderer());
                         setRowMargin(2);
                         setDragEnabled(false);
+                        getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                        
                         setModel(new AbstractTableModel() {
                             @Override
@@ -160,9 +164,22 @@ public class InitializeResultQuestionsView {
                         });
                         
                         final Pointer<JTable> table = new Pointer<>(this);
-                        getSelectionModel().addListSelectionListener((e) -> {
-                            table.get().getSelectedRow();
-                        }) ;
+                        addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                if(e.getClickCount() > 1) {
+                                    int sel = table.get().getSelectedRow();
+                                    if(sel >= 0) {
+                                        QueryResultDetailViewDlg dlg = 
+                                                new QueryResultDetailViewDlg(
+                                                        wnd, 
+                                                        qresults.get(sel));
+                                        dlg.setVisible(true);
+                                    }
+                                }
+                                super.mouseClicked(e);
+                            }
+                        });
                     } }
             ), BorderLayout.CENTER);
         } }, BorderLayout.CENTER);

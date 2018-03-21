@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package quiz48.gui.init;
+package quiz48.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
