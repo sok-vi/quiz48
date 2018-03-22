@@ -138,6 +138,6 @@ public class QueryResult {
             s.executeUpdate();
         }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail, duplicate) VALUES(?, ?, ?, ?, ?, ?)");
         
-        return new QueryResult(tr, q, time, answer, fv, false);
+        return new QueryResult(tr, q, time, answer, fv, qResExist.get());
     }
 }

@@ -173,6 +173,30 @@ public class QueryResultDetailViewDlg extends JDialog{
                                     + "background-color: #%2$02x%3$02x%4$02x;\">"
                                     + "%1$s</div</html>", 
                             rq.fail().getResultString(), bgc.getRed(), bgc.getGreen(), bgc.getBlue())), _cc);
+            
+            _cc.gridx = 0;
+            _cc.gridy = 5;
+            _cc.weightx = 0;
+            _cc.weighty = 0;
+            _cc.gridwidth = 1;
+            _cc.gridheight = 1;
+            _cc.insets = _is1;
+            _cc.fill = GridBagConstraints.NONE;
+            _cc.anchor = GridBagConstraints.NORTHEAST;
+            add(new JLabel("Повторно:"), _cc);
+
+            _cc.gridx = 1;
+            _cc.gridy = 5;
+            _cc.weightx = 0;
+            _cc.weighty = 0;
+            _cc.gridwidth = 1;
+            _cc.gridheight = 1;
+            _cc.insets = is2;
+            _cc.fill = GridBagConstraints.HORIZONTAL;
+            _cc.anchor = GridBagConstraints.CENTER;
+            add(new JLabel(rq.duplicate ? 
+                    "<html><div style=\"padding: 5px; background-color: yellow;\">Да</div></html>" : 
+                    "<html><div style=\"padding: 5px; background-color: green;\">Нет</div></html>"), _cc);
         } }, BorderLayout.CENTER);
         add(new JPanel() { {
             setLayout(new FlowLayout(FlowLayout.RIGHT));

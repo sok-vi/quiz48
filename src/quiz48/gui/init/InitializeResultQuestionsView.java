@@ -102,7 +102,8 @@ public class InitializeResultQuestionsView {
                         * колонки
                         * 1 - номер вопроса
                         * 2 - результат
-                        * 3 - вес
+                        * 3 - повторно
+                        * 4 - вес
                         */
                         setDefaultRenderer(QueryResult.fail.class, new ResultCellRenderer());
                         setDefaultRenderer(Boolean.class, new DuplicateCellRenderer());
@@ -162,6 +163,7 @@ public class InitializeResultQuestionsView {
                                     case 3:
                                         return PercentCellValue.class;
                                 }
+                                
                                 return super.getColumnClass(columnIndex); 
                             }
 
