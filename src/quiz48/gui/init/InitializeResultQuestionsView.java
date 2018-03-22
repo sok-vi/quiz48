@@ -8,6 +8,7 @@ package quiz48.gui.init;
 import quiz48.gui.PercentCellValue;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
@@ -23,11 +24,14 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import quiz48.Pointer;
+import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
+import quiz48.gui.DuplicateCellRenderer;
+import quiz48.gui.LoadingWindow;
 import quiz48.gui.QueryResultDetailViewDlg;
 
 /**
@@ -48,8 +52,8 @@ public class InitializeResultQuestionsView {
             return super.getTableCellRendererComponent(table, resultValue.getResultString(), isSelected, hasFocus, row, column);
         }
     }
-    
-    public static void initialize(
+
+    public static void implInitialize(
             JFrame wnd, 
             JPanel main, 
             BottomPanel bottom, 
@@ -57,17 +61,9 @@ public class InitializeResultQuestionsView {
             Runnable initStatWindow, 
             ConnectDB conn, 
             TestResult current,
-            List<QueryResult> qresults) {
-        
-        Pointer<Integer> sumWeight = new Pointer<>(0),
-                sumResult = new Pointer<>(0);
-        for(QueryResult qr : qresults) {
-            sumWeight.put(sumWeight.get() + qr.query.weight);
-            sumResult.put(sumResult.get() + (qr.fail() == QueryResult.fail.ok ? qr.query.weight : 0));
-        }
-        
-        if(sumWeight.get() == 0) { sumWeight.put(0); }
-        
+            List<QueryResult> qresults,
+            int sumWeight,
+            int sumResult) {
         main.removeAll();
         main.setLayout(new BorderLayout());
         
@@ -109,6 +105,7 @@ public class InitializeResultQuestionsView {
                         * 3 - вес
                         */
                         setDefaultRenderer(QueryResult.fail.class, new ResultCellRenderer());
+                        setDefaultRenderer(Boolean.class, new DuplicateCellRenderer());
                         setDefaultRenderer(PercentCellValue.class, new PercentCellValue.PercentCellValueRenderer());
                         setRowMargin(2);
                         setDragEnabled(false);
@@ -120,7 +117,7 @@ public class InitializeResultQuestionsView {
 
                             @Override
                             public int getColumnCount() {
-                                return 3;
+                                return 4;
                             }
 
                             @Override
@@ -131,7 +128,9 @@ public class InitializeResultQuestionsView {
                                     case 1:
                                         return qresults.get(rowIndex).fail();
                                     case 2:
-                                        return new PercentCellValue((double)qresults.get(rowIndex).query.weight * 100 / sumWeight.get());
+                                        return (Boolean)qresults.get(rowIndex).duplicate;
+                                    case 3:
+                                        return new PercentCellValue((double)qresults.get(rowIndex).query.weight * 100 / sumWeight);
                                 }
 
                                 return 0;
@@ -145,6 +144,8 @@ public class InitializeResultQuestionsView {
                                     case 1:
                                         return "Результат";
                                     case 2:
+                                        return "Повторно";
+                                    case 3:
                                         return "Вес, %";
                                 }
 
@@ -157,6 +158,8 @@ public class InitializeResultQuestionsView {
                                     case 1:
                                         return QueryResult.fail.class;
                                     case 2:
+                                        return Boolean.class;
+                                    case 3:
                                         return PercentCellValue.class;
                                 }
                                 return super.getColumnClass(columnIndex); 
@@ -199,7 +202,7 @@ public class InitializeResultQuestionsView {
                                         + "</strong>"
                                         + "</div>"
                                         + "</html>", 
-                                (double)sumResult.get() * 100 / (double)sumWeight.get())), BorderLayout.CENTER);
+                                (double)sumResult * 100 / (double)sumWeight)), BorderLayout.CENTER);
             } }, BorderLayout.EAST);
         } }, BorderLayout.SOUTH);
 
@@ -219,5 +222,37 @@ public class InitializeResultQuestionsView {
         
         wnd.revalidate();
         wnd.repaint();
+    }
+    
+    public static void initialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStartWindow, 
+            Runnable initStatWindow, 
+            ConnectDB conn, 
+            TestResult current,
+            List<QueryResult> qresults) {
+        
+        TaskQueue.instance().addNewTask(() -> {
+            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Формирование результатов теста...");
+            LoadingWindow.sleep(2);
+            
+            Pointer<Integer> sumWeight = new Pointer<>(0),
+                    sumResult = new Pointer<>(0);
+            for(QueryResult qr : qresults) {
+                sumWeight.put(sumWeight.get() + qr.query.weight);
+                sumResult.put(sumResult.get() + (qr.fail() == QueryResult.fail.ok ? qr.query.weight : 0));
+            }
+
+            if(sumWeight.get() == 0) { sumWeight.put(0); }
+            EventQueue.invokeLater(() -> {
+                implInitialize(wnd, main, bottom, initStartWindow, initStatWindow, conn, current, qresults, sumWeight.get(), sumResult.get());
+            });
+            
+            cb.setInformation("Формирование результатов теста...успешно");
+            LoadingWindow.sleep(1);
+            cb.exit();
+        });
     }
 }

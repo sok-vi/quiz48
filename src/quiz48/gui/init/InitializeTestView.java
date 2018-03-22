@@ -665,7 +665,7 @@ public class InitializeTestView {
             
             try {
                 //LoadingWindow.sleep(2);
-                Query.loadQuery(conn, (q) -> {
+                Query.loadQuerys(conn, (q) -> {
                     querys.add(q);
                 }, current);
                 if(querys.size() > 0) {

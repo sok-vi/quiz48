@@ -24,7 +24,9 @@ CREATE UNIQUE INDEX users_login ON users (login);
 CREATE TABLE quiz (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     name VARCHAR(255) NOT NULL,
-    is_fix INTEGER NOT NULL DEFAULT 0, -- 0 - фиксировнное количество вопросов - выбираются все связанные вопросы, 1 - выбираются случайные вопрос в количестве count
+    is_fix INTEGER NOT NULL DEFAULT 0, 
+        -- 0 - фиксировнное количество вопросов - выбираются все связанные вопросы, 
+        -- 1 - выбираются случайные вопрос в количестве count
     count INTEGER NOT NULL DEFAULT 10, -- количество вопросов викторины
     time INTEGER NOT NULL DEFAULT 0, -- 0 если не требуется ограничить время прохождения викторины или в секундах ограничение
     sort INTEGER NOT NULL DEFAULT 0, -- сортировка - 1 сотировака
@@ -87,17 +89,19 @@ CREATE TABLE query_result (
     query_id INTEGER NOT NULL, -- ссылка на query.id
     answer VARCHAR(1024) NOT NULL DEFAULT '', -- ответ пользователя
     time INTEGER NOT NULL DEFAULT 0, -- время в секундах ответа на вопрос
-    fail INTEGER NOT NULL DEFAULT 2 
+    fail INTEGER NOT NULL DEFAULT 2,
         -- 0 - правильно; 
         -- 1 - не правильно; 
         -- 2 - превышен таймаут - правильно; 
         -- 3 - превышен таймаут - не правильно; 
         -- 4 - превышен таймаут теста - правильно; 
         -- 5 - превышен таймаут - не правильно
+    duplicate INTEGER NOT NULL DEFAULT 0 -- 1 - викторина проходится во второй раз
 );
 
 CREATE INDEX query_result_quiz_result_id ON query_result (quiz_result_id);
 CREATE INDEX query_result_query_id ON query_result (query_id);
 CREATE INDEX query_result_fail ON query_result (fail);
+CREATE INDEX query_result_duplicate ON query_result (duplicate);
 
 

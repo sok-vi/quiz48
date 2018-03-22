@@ -6,7 +6,9 @@
 package quiz48.db.orm;
 
 import java.awt.Color;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 
 /**
@@ -69,16 +71,18 @@ public class QueryResult {
     
     public final TestResult testResult;
     public final Query query;
+    public final boolean duplicate;
     private int time;
     private fail result;
     private String answer;
     
-    public QueryResult(TestResult tr, Query q, int time, String answer, fail fv) {
+    public QueryResult(TestResult tr, Query q, int time, String answer, fail fv, boolean duplicate) {
         testResult = tr;
         query = q;
         this.time = time;
         this.answer = answer;
         result = fv;
+        this.duplicate = duplicate;
     }
     
     public final int time() { return time; }
@@ -115,15 +119,25 @@ public class QueryResult {
     }
     
     public static QueryResult saveQueryResult(ConnectDB conn, TestResult tr, Query q, int time, String answer, fail fv) throws SQLException {
+        Pointer<Boolean> qResExist = new Pointer<>(false);
+        conn.executeQuery((s) -> {
+            s.setInt(1, q.ID);
+            ResultSet rs = s.executeQuery();
+            if(rs.next()) {
+                qResExist.put(rs.getInt("CNT") > 0);
+            }
+        }, "SELECT COUNT(*) AS CNT FROM query_result WHERE query_id=?");
+        
         conn.executeQuery((s) -> {
             s.setInt(1, tr.ID);
             s.setInt(2, q.ID);
             s.setString(3, answer);
             s.setInt(4, time);
             s.setInt(5, fv.fail2int());
+            s.setInt(6, qResExist.get() ? 1 : 0);
             s.executeUpdate();
-        }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail) VALUES(?, ?, ?, ?, ?)");
+        }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail, duplicate) VALUES(?, ?, ?, ?, ?, ?)");
         
-        return new QueryResult(tr, q, time, answer, fv);
+        return new QueryResult(tr, q, time, answer, fv, false);
     }
 }
