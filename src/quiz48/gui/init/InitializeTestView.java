@@ -494,6 +494,11 @@ public class InitializeTestView {
                             qresult.get().time((int)Math.round(((double)myTimer.getQuestionTimer()) / 1000), conn);
                             //обновим результат
                             qresult.get().answer(answerPtr.get().getAnswerValue(), conn);
+                            qresult.get().fail(
+                                    answerPtr.get().getAnswerValue().compareToIgnoreCase(querys.get(queryIndex.get()).Answer) == 0 ?
+                                            (tresult.status() == TestResult.status.fail ?  QueryResult.fail.timeout_ok :  QueryResult.fail.qu_timeout_test_ok) :
+                                            (tresult.status() == TestResult.status.fail ?  QueryResult.fail.timeout_fail :  QueryResult.fail.qu_timeout_test_fail)
+                                    , conn);
                             queryResults.add(qresult.get());
                             qresult.put(null);//сбросили сущность бд
                         }
@@ -505,8 +510,10 @@ public class InitializeTestView {
                                             querys.get(queryIndex.get()), 
                                             (int)Math.round(((double)myTimer.getQuestionTimer()) / 1000), 
                                             answerPtr.get().getAnswerValue(), 
-                                            answerPtr.get().getAnswerValue().compareToIgnoreCase(
-                                                    querys.get(queryIndex.get()).Answer) == 0 ? QueryResult.fail.ok : QueryResult.fail.fail));
+                                            answerPtr.get().getAnswerValue().compareToIgnoreCase(querys.get(queryIndex.get()).Answer) == 0 ? 
+                                                    (tresult.status() == TestResult.status.fail ? QueryResult.fail.ok : QueryResult.fail.timeout_test_ok) : 
+                                                    (tresult.status() == TestResult.status.fail ? QueryResult.fail.fail : QueryResult.fail.timeout_test_fail)
+                                    ));
                             
                         }
 
@@ -524,6 +531,9 @@ public class InitializeTestView {
                         }
                         else {
                             //auf wiedersehen
+                            if(tresult.status() == TestResult.status.fail) {
+                                tresult.status(TestResult.status.ok, conn);
+                            }
                             EventQueue.invokeAndWait(() -> {
                                 timerPtr.get().stop();//остановить таймер
                                 initResultView.run(tresult, queryResults);//вывод результатов
@@ -582,6 +592,22 @@ public class InitializeTestView {
                     else {
                         quizTimeout.get().setText(QuizTimer.durationFormat(quiz_timeout_balance * -1, usef1.get()));
                         quizTimeout.get().setForeground(Color.red);
+                        TaskQueue.instance().addNewTask(() -> {
+                            if(tresult.status() == TestResult.status.fail) {
+                                LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Время на тест закончилось!!!");
+                                myTimer.stop();//остановили счётчик
+                                try {
+                                    LoadingWindow.sleep(2);
+                                    tresult.status(TestResult.status.timeout, conn);
+                                } catch (SQLException ex) {
+                                    cb.setInformation("Ошибка базы данных", Color.red);
+                                    LoadingWindow.sleep(3);
+                                    System.exit(0);
+                                }
+                                myTimer.start();//запустили счётчик
+                                cb.exit();
+                            }
+                        });
                     }
                 }
                 
@@ -598,7 +624,8 @@ public class InitializeTestView {
                                 myTimer.stop();//остановили счётчик
                                 try {
                                     LoadingWindow.sleep(2);
-                                    qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), 0, "", QueryResult.fail.timeout));
+                                                                                                                    //ответа нет поэтому запишем файл
+                                    qresult.put(QueryResult.saveQueryResult(conn, tresult, querys.get(queryIndex.get()), 0, "", QueryResult.fail.timeout_fail));
                                 } catch (SQLException ex) {
                                     cb.setInformation("Ошибка базы данных", Color.red);
                                     LoadingWindow.sleep(3);

@@ -85,13 +85,14 @@ public class InitializeResultQuestionsView {
                                         + "<div style=\"font-size: 24pt; color: blue;\">Тест: <span style=\"color: green;\"><strong>%1$s</strong></span></div>"
                                         + "<div style=\"font-size: 20pt; color: blue;\">Затрачено: <span style=\"color: green;\"><strong>%2$s%3$s</strong></span></div>"
                                         + "<div style=\"font-size: 20pt; color: blue;\">Дата теста: <span style=\"color: green;\"><strong>%4$s</strong></span></div>"
-                                                + "%5$s"
+                                                + "%5$s%6$s"
                                         + "</html>", current.test.name, 
                                         quiz48.QuizTimer.durationFormat(current.time() * 1000, true),
                                         current.test.time > 0 ? 
                                                 String.format(" из %1$s", quiz48.QuizTimer.durationFormat(current.test.time * 1000, true)) : "", 
                                         new SimpleDateFormat("HH:mm:ss dd.MM.yyyy").format(current.date), 
-                                        current.duplicate ? "<div style=\"font-size: 20pt; color: white;background-color: red;padding:3px;\">Повторно</div>" : "")
+                                        current.duplicate ? "<div style=\"font-size: 20pt; color: white;background-color: red;padding:3px;\">Повторно</div>" : "",
+                                        current.status() == TestResult.status.timeout ? "<div style=\"font-size: 20pt; color: blue;background-color: yellow;padding:3px;\">Превышено время теста</div>" : "")
                         ), BorderLayout.CENTER);
                 add(new JLabel(AppIcons.instance().get("test_result64.png")), BorderLayout.EAST);
             } }, BorderLayout.CENTER);

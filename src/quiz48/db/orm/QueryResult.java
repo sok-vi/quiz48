@@ -15,9 +15,14 @@ import quiz48.db.ConnectDB;
  */
 public class QueryResult {
     public enum fail {
-        ok(0) { },
-        fail(1) { },
-        timeout(2) { };
+        ok(0),
+        fail(1),
+        timeout_ok(2),
+        timeout_fail(3),
+        timeout_test_ok(4),
+        timeout_test_fail(5),
+        qu_timeout_test_ok(6),
+        qu_timeout_test_fail(7);
         
         protected int value;
         private fail(int iv) { value = iv; }
@@ -28,13 +33,37 @@ public class QueryResult {
                 case 1:
                     return "ошибка";
                 case 2:
-                    return "время";
+                    return "правильно - превышено время вопроса";
+                case 3:
+                    return "ошибка - превышено время вопроса";
+                case 4:
+                    return "правильно - превышено общее время теста";
+                case 5:
+                    return "ошибка - превышено общее время теста";
+                case 6:
+                    return "правильно - превышено общее время теста и вопроса";
+                case 7:
+                    return "ошибка - превышено общее время теста и вопроса";
             }
+            
             return "правильно";
         }
         
         public final Color getResultColor() {
-            return value == 0 ? Color.green : Color.red;
+            switch(value) {
+                case 1:
+                    return Color.red;
+                case 2:
+                case 4:
+                case 6:
+                    return Color.yellow;
+                case 3:
+                case 5:
+                case 7:
+                    return Color.PINK;
+            }
+            
+            return Color.green;
         }
     }
     

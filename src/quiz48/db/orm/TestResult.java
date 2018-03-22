@@ -18,9 +18,9 @@ import quiz48.db.ConnectDB;
  */
 public class TestResult {
     public enum status {
-        fail(0) { },
-        ok(1) { },
-        timeout(2) { };
+        fail(0),
+        ok(1),
+        timeout(2);
         
         protected int value;
         private status(int iv) { value = iv; }
@@ -86,8 +86,18 @@ public class TestResult {
             s.setInt(1, time);
             s.setInt(2, ID);
             s.execute();
-        }, "UPDATE quiz_result q SET q.time=? WHERE q.id=?");
+        }, "UPDATE quiz_result SET time=? WHERE id=?");
         this.time = time;
+    }
+    
+    public final status status() { return sv; }
+    public final void status(status sv, ConnectDB conn) throws SQLException {
+        conn.executeQuery((s) -> {
+            s.setInt(1, sv.status2int());
+            s.setInt(2, ID);
+            s.executeUpdate();
+        }, "UPDATE quiz_result SET status=? WHERE id=?");
+        this.sv = sv;
     }
     
     public static TestResult createTestResult(ConnectDB conn, User u, Test t) throws SQLException {

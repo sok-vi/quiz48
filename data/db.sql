@@ -87,7 +87,13 @@ CREATE TABLE query_result (
     query_id INTEGER NOT NULL, -- ссылка на query.id
     answer VARCHAR(1024) NOT NULL DEFAULT '', -- ответ пользователя
     time INTEGER NOT NULL DEFAULT 0, -- время в секундах ответа на вопрос
-    fail INTEGER NOT NULL DEFAULT 2 -- 0 - правильно; 1 - не правильно; 2 - превышен таймаут
+    fail INTEGER NOT NULL DEFAULT 2 
+        -- 0 - правильно; 
+        -- 1 - не правильно; 
+        -- 2 - превышен таймаут - правильно; 
+        -- 3 - превышен таймаут - не правильно; 
+        -- 4 - превышен таймаут теста - правильно; 
+        -- 5 - превышен таймаут - не правильно
 );
 
 CREATE INDEX query_result_quiz_result_id ON query_result (quiz_result_id);
