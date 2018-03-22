@@ -332,10 +332,29 @@ public class InitializeTestView {
             });
         } }, _cc);
         
+        Pointer<JLabel> qIconLabel = new Pointer<>();
+        _cc.gridx = 0;
+        _cc.gridy = 3;
+        _cc.weightx = 0;
+        _cc.weighty = 100;
+        _cc.gridwidth = 1;
+        _cc.gridheight = 1;
+        _cc.insets = _is1;
+        _cc.fill = GridBagConstraints.BOTH;
+        _cc.anchor = GridBagConstraints.CENTER;
+        main.add(new JLabel() { { 
+            setHorizontalAlignment(JLabel.CENTER);
+            setHorizontalTextPosition(JLabel.CENTER);
+            setVerticalAlignment(JLabel.CENTER);
+            setVerticalTextPosition(JLabel.CENTER);
+            qIconLabel.put(this);
+        } }, _cc);
+        
         //панель с вопросом
         Pointer<JLabel> queryTitleLabel = new Pointer<>(),
                 queryBodyLabel = new Pointer<>(),
-                queryAnswerLabel = new Pointer<>();
+                queryAnswerLabel = new Pointer<>(),
+                queryAnswerIcon = new Pointer<>();
         Pointer<JPanel> queryAnswerPanel = new Pointer<>();
         
         _cc.gridx = 1;
@@ -347,7 +366,7 @@ public class InitializeTestView {
         _cc.insets = _is1;
         _cc.fill = GridBagConstraints.BOTH;
         _cc.anchor = GridBagConstraints.CENTER;
-       main.add(new JPanel() { {
+        main.add(new JPanel() { {
            setLayout(new BorderLayout());
            add(new JPanel() { {//заголовок с указание теста и номера вопроса
                setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -369,7 +388,7 @@ public class InitializeTestView {
                    queryBodyLabel.put(this);
                } }, BorderLayout.CENTER);
            } }, BorderLayout.CENTER);
-           add(new JPanel() { {//натель с контролом для ввода результата
+           add(new JPanel() { {//панель с контролом для ввода результата
                setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
                setLayout(new BorderLayout());
                add(new JPanel() { {
@@ -390,7 +409,7 @@ public class InitializeTestView {
                    } }, BorderLayout.CENTER);
                    //весёлая иконка, приглашающая в вводу ответа
                    add(new JLabel() { {
-                       setText("jhjhj");
+                       queryAnswerIcon.put(this);
                    } }, BorderLayout.EAST);
                } }, BorderLayout.CENTER);
            } }, BorderLayout.SOUTH);
@@ -405,6 +424,7 @@ public class InitializeTestView {
         LinkedList<QueryResult> queryResults = new LinkedList<>();
 
         Runnable initNewQuery = () -> {
+            qIconLabel.get().setIcon(AppIcons.instance().getRandomQuestion());
             Query currQuery = querys.get(queryIndex.get());
             if(currQuery.time > 0) {
                 if(queryTimeout.get() == null) {
@@ -438,6 +458,7 @@ public class InitializeTestView {
                     answerPtr.put(new TextFieldValue(this));
                 } }, BorderLayout.CENTER);
                 queryAnswerLabel.get().setText("Введите значение:");
+                queryAnswerIcon.get().setIcon(AppIcons.instance().get("keyboard32.png"));
             }
             else {
                 queryAnswerPanel.get().add(new JComboBox<String>() { {
@@ -448,6 +469,7 @@ public class InitializeTestView {
                     answerPtr.put(new ComboBoxValue(this));
                 } }, BorderLayout.CENTER);
                 queryAnswerLabel.get().setText("Выберите вариант из списка:");
+                queryAnswerIcon.get().setIcon(AppIcons.instance().get("mouse32.png"));
             }
         };
         

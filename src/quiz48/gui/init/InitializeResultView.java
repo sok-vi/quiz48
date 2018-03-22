@@ -12,6 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import quiz48.db.ConnectDB;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
@@ -42,6 +43,13 @@ public class InitializeResultView {
             setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
             add(new JScrollPane(
                     new JTable() { {
+                        /**
+                         * колонки
+                         * 
+                         */
+                        setRowMargin(2);
+                        setDragEnabled(false);
+                        getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                         
                     } }
             ), BorderLayout.CENTER);

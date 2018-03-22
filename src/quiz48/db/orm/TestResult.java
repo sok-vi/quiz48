@@ -5,6 +5,7 @@
  */
 package quiz48.db.orm;
 
+import java.awt.Color;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -16,22 +17,67 @@ import quiz48.db.ConnectDB;
  * @author vasya
  */
 public class TestResult {
+    public enum status {
+        fail(0) { },
+        ok(1) { },
+        timeout(2) { };
+        
+        protected int value;
+        private status(int iv) { value = iv; }
+        public int status2int() { return value; }
+        
+        public static status int2status(int iv) {
+            switch(iv) {
+                case 1:
+                    return ok;
+                case 2:
+                    return timeout;
+            }
+            return fail;
+        }
+        
+        public final String getResultString() {
+            switch(value) {
+                case 1:
+                    return "пойден";
+                case 2:
+                    return "превышен лимит времени";
+            }
+            
+            return "не завершёт";
+        }
+        
+        public final Color getResultColor() {
+            return value == 1 ? Color.GREEN : Color.RED;
+        }
+    }
+    
+    private static status int2status(int v) {
+        switch(v) {
+            case 1:
+                return status.ok;
+        }
+        
+        return status.fail;
+    }
+    
     public final static int PAGE_SIZE = 10;
     public final int ID;
     private int time;
+    private status sv;
     public final User user;
     public final Test test;
     public final Timestamp date;
-    public final boolean duplicate, passed;
+    public final boolean duplicate;
     //SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
-    public TestResult(int ID, int time, User user, Test test, Timestamp date, boolean duplicate, boolean passed) {
+    public TestResult(int ID, int time, User user, Test test, Timestamp date, boolean duplicate, status status) {
         this.ID = ID;
         this.time = time;
         this.user = user;
         this.test = test;
         this.date = date;
         this.duplicate = duplicate;
-        this.passed = passed;
+        sv = status;
     }
     
     public final int time() { return time; }
@@ -90,7 +136,8 @@ public class TestResult {
                                 t, 
                                 rs.getTimestamp("date"), 
                                 rs.getInt("duplicate") != 0, 
-                                rs.getInt("status") == 1));
+                                status.int2status(rs.getInt("status"))
+                                ));
             }
             else {
                 throw new SQLException("fail");

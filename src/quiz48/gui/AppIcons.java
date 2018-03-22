@@ -6,6 +6,7 @@
 package quiz48.gui;
 
 import java.util.HashMap;
+import java.util.Random;
 import javax.swing.ImageIcon;
 
 /**
@@ -13,6 +14,7 @@ import javax.swing.ImageIcon;
  * @author vasya
  */
 public final class AppIcons {
+    private final static int MAX_QUESTION = 9;
     private final HashMap<String, ImageIcon> m_IconMap = new HashMap<>();
     private final Class<?> m_ThisClass = AppIcons.class;
     
@@ -26,6 +28,11 @@ public final class AppIcons {
         }
         
         return m_IconMap.get(resouceKey);
+    }
+    
+    public final ImageIcon getRandomQuestion() {
+        Random rnd = new Random(System.currentTimeMillis());
+        return get(String.format("q%1$d.png", rnd.nextInt(MAX_QUESTION)));
     }
 
     private static AppIcons gInstance;
