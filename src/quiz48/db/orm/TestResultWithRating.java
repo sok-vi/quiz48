@@ -5,10 +5,10 @@
  */
 package quiz48.db.orm;
 
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 
@@ -25,7 +25,7 @@ public class TestResultWithRating extends TestResult{
         this.rating = rating;
     }
     
-    public static void loadResults(ConnectDB conn, EntityAccess<TestResultWithRating> ea, int dbPage, User u) throws SQLException {
+    private static int getPageCount(ConnectDB conn) throws SQLException {
         /**
          * узнае количество страниц данных в бд
          */
@@ -36,8 +36,13 @@ public class TestResultWithRating extends TestResult{
             else { throw new SQLException("fail"); }
         }, "SELECT COUNT(*) AS CNT FROM quiz_result");
         
-        int pageCount = count.get() / PAGE_SIZE;
-        if((pageCount * PAGE_SIZE) < count.get()) { ++pageCount; }
+        return count.get();
+    }
+    
+    public static int loadResults(ConnectDB conn, EntityAccess<TestResultWithRating> ea, int dbPage, User u) throws SQLException {
+        int count = getPageCount(conn);
+        int pageCount = count / PAGE_SIZE;
+        if((pageCount * PAGE_SIZE) < count) { ++pageCount; }
         
         /**
          * указанная страница должна попасть в дипозон
@@ -48,29 +53,58 @@ public class TestResultWithRating extends TestResult{
         if(page.get() > pageCount) { page.put(pageCount); }
         if(page.get() < 0) { page.put(0); }
         
+        HashMap<Integer, User> users = new HashMap<>();
+        HashMap<Integer, Test> tests = new HashMap<>();
+        users.put(u.ID, u);
+        
         conn.executeQuery((s) -> {
-            s.setInt(1, page.get() * PAGE_SIZE);
-            s.setInt(2, PAGE_SIZE);
+            if(u.isAdmin) {
+                s.setInt(1, page.get() * PAGE_SIZE);
+                s.setInt(2, PAGE_SIZE);
+            }
+            else {
+                s.setInt(1, u.ID);
+                s.setInt(2, page.get() * PAGE_SIZE);
+                s.setInt(3, PAGE_SIZE);
+            }
+            
             ResultSet rs = s.executeQuery();
             while(rs.next()) {
                 int _w = rs.getInt("SUM_W"),
-                        _wa = rs.getInt("SUM_W_ACT");
-                if(_w == 0) { _w = 0; }
+                        _wa = rs.getInt("SUM_W_ACT"),
+                        _uid = rs.getInt("user_id"),
+                        _tid = rs.getInt("quiz_id");
+                if(_w == 0) { _w = 1; }
+                
+                if(!users.containsKey(_uid)) {
+                    users.put(_uid, User.loadUser(conn, _uid));
+                }
+                
+                User _u = users.get(_uid);
+                
+                if(!tests.containsKey(_tid)) {
+                    tests.put(_tid, Test.loadTest(conn, _tid));
+                }
+                
+                Test _t = tests.get(_tid);
+                
                 ea.getEntity(
                         new TestResultWithRating(
                                 rs.getInt("id"), 
                                 rs.getInt("time"), 
-                                u, 
-                                null, 
+                                _u, 
+                                _t, 
                                 rs.getTimestamp("date"), 
                                 rs.getInt("duplicate") != 0, 
                                 status.int2status(rs.getInt("status")),
-                                ((double)_wa) / _w
+                                ((double)_wa) * 100 / _w
                         ));
             }
-        }, "SELECT qr.*, "
-                + "(SELECT SUM(q1.weight) FROM query_result qr1 INNER JOIN query q1 ON q1.id=qr1.query_id WHERE qr1.quiz_result_id=qr.id) AS SUM_W, "
-                + "(SELECT SUM(q2.weight) FROM query_result qr2 INNER JOIN query q2 ON q2.id=qr2.query_id WHERE qr2.quiz_result_id=qr.id AND qr1.fail=0) AS SUM_W_ACT "
-                + "FROM quiz_result qr OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        }, String.format("SELECT qr.*, "
+                + "(SELECT SUM(q1.weight) FROM query q1 WHERE q1.quiz_id=qr.quiz_id) AS SUM_W, "
+                + "(SELECT SUM(q2.weight) FROM query_result qr2 INNER JOIN query q2 ON q2.id=qr2.query_id WHERE qr2.quiz_result_id=qr.id AND qr2.fail=0) AS SUM_W_ACT "
+                + "FROM quiz_result qr%1$s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", u.isAdmin ? "" : " WHERE qr.user_id=?"));
+        
+        return count;
     }
 }

@@ -75,8 +75,30 @@ public class User {
                                     rs.getInt("is_admin") == 1)
                     );
                 }
+                else { throw new SQLException("fail"); }
             }
+            else { throw new SQLException("fail"); }
         }, "SELECT * FROM users WHERE login=?");
+        
+        return userRow.get();
+    }
+    
+    public static User loadUser(ConnectDB conn, int uid) throws SQLException {
+        Pointer<User> userRow = new Pointer<>();
+        
+        conn.executeQuery((s) -> {
+            s.setInt(1, uid);
+            ResultSet rs = s.executeQuery();
+            if(rs.next()) {
+                userRow.put(
+                        new User(
+                                rs.getInt("id"), 
+                                rs.getString("login"), 
+                                rs.getString("name"), 
+                                rs.getInt("is_admin") == 1)
+                );
+            }
+        }, "SELECT * FROM users WHERE id=?");
         
         return userRow.get();
     }

@@ -7,6 +7,7 @@ package quiz48.db.orm;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 
 /**
@@ -29,7 +30,7 @@ public class Test  {
         this.level = level;
     }
     
-    public static void loadTest(ConnectDB conn, EntityAccess<Test> ea, quiz48.gui.User u) throws SQLException {
+    public static void loadTests(ConnectDB conn, EntityAccess<Test> ea, quiz48.gui.User u) throws SQLException {
         if(!u.isLogin()) {
             conn.executeQuery((s) -> {
                 ResultSet rs = s.executeQuery();
@@ -69,6 +70,32 @@ public class Test  {
                     + "((q.repeat=0) AND ((SELECT count(*) FROM quiz_result qr1 WHERE qr1.quiz_id=q.id AND qr1.user_id=?)=0))) "
                     + "ORDER BY q.sort, q.level ASC");
         }
+    }
+    
+    public static Test loadTest(ConnectDB conn, int tid) throws SQLException {
+        Pointer<Test> tp = new Pointer<>();
+        
+        conn.executeQuery((s) -> {
+            s.setInt(1, tid);
+            ResultSet rs = s.executeQuery();
+            if(rs.next()) {
+                tp.put(
+                        new Test(
+                                tid, 
+                                rs.getString("name"), 
+                                rs.getInt("is_fix") == 0, 
+                                rs.getInt("count"), 
+                                rs.getInt("time"), 
+                                rs.getInt("repeat"), 
+                                rs.getInt("sort"), 
+                                rs.getInt("level")
+                        )
+                );
+            }
+            else { throw new SQLException("fail"); }
+        }, "SELECT * FROM quiz WHERE id=?");
+        
+        return tp.get();
     }
 
     @Override

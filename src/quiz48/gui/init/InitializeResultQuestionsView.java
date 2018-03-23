@@ -109,7 +109,7 @@ public class InitializeResultQuestionsView {
                         setDefaultRenderer(Boolean.class, new DuplicateCellRenderer());
                         setDefaultRenderer(PercentCellValue.class, new PercentCellValue.PercentCellValueRenderer());
                         setRowMargin(2);
-                        setDragEnabled(false);
+                        getTableHeader().setReorderingAllowed(false);
                         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                        
                         setModel(new AbstractTableModel() {

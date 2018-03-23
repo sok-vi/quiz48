@@ -120,7 +120,7 @@ public class InitializeQuizListView {
                 //LoadingWindow.sleep(2);
                 EventQueue.invokeLater(() -> { qListModel.clear(); });
                 try {
-                    Test.loadTest(conn, (entity) -> {
+                    Test.loadTests(conn, (entity) -> {
                         EventQueue.invokeLater(() -> { qListModel.addElement(entity); });
                     }, u);
                     //LoadingWindow.sleep(2);

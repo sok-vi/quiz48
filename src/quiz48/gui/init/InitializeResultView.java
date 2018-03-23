@@ -6,22 +6,33 @@
 package quiz48.gui.init;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.LinkedList;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import quiz48.Pointer;
 import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
 import quiz48.db.orm.TestResultWithRating;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
+import quiz48.gui.DuplicateCellRenderer;
+import quiz48.gui.LoadingWindow;
+import quiz48.gui.PercentCellValue;
 import quiz48.gui.User;
 
 /**
@@ -29,28 +40,48 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeResultView {
-    public static void initialize(
+    private static final class MaxPageCountSetter {
+        private final JLabel label;
+        public MaxPageCountSetter(JLabel label) { this.label = label; }
+        public final void setMaxPasgeCount(int pageCount) { label.setText(String.format("из %1$s", Integer.toString(pageCount))); }
+    }
+    
+    private static void implInitialize(
             JFrame wnd, 
             JPanel main, 
             BottomPanel bottom, 
             Runnable initStartWindow, 
             User u, 
-            ConnectDB conn) {
-        
-        TaskQueue.instance().addNewTask(() -> {
-            try {
-                TestResultWithRating.loadResults(conn, (entity) -> {
-                }, 0, u.getUserEntity());
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-        });
-        
+            ConnectDB conn,
+            LinkedList<TestResultWithRating> qrl,
+            int page_count) {
         main.removeAll();
         main.setLayout(new BorderLayout());
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
+        
+        Pointer<Integer> currPage = new Pointer<>(0),
+                pageCount = new Pointer<>(page_count);
+        Pointer<JButton> prevButton = new Pointer<>(),
+                nextButton = new Pointer<>();
+        Pointer<JTextField> currPageLabel = new Pointer<>();
+        Pointer<MaxPageCountSetter> maxPageCountSetter = new Pointer<>();
         
         //верхняя панель
         main.add(new JPanel() { {
+            setLayout(new BorderLayout());
+            setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
+            add(new JLabel(String.format(
+                            "<html><table><tr><td><img src=\"%4$s\"/></td><td>%1$s  {<strong>%2$s</strong>}%3$s</td></tr?</table></html>", 
+                            u.getUserEntity().getName(), 
+                            u.getUserEntity().getLogin(), 
+                            u.getUserEntity().isAdmin ? 
+                                    String.format(
+                                            " <img src=\"%1$s\"/>", 
+                                            AppIcons.instance().get("stat_admin16.png").toString()) :
+                                    "",
+                            AppIcons.instance().get("user48.png").toString())), BorderLayout.WEST);
+            add(new JPanel(), BorderLayout.CENTER);
+            add(new JLabel(AppIcons.instance().get("test_result64.png")), BorderLayout.EAST);
         } }, BorderLayout.NORTH);
         //таблица
         main.add(new JPanel() { {
@@ -66,13 +97,15 @@ public class InitializeResultView {
                          * 4 - общее время
                          * 5 - процент выполнения
                          */
+                        setDefaultRenderer(Boolean.class, new DuplicateCellRenderer());
+                        setDefaultRenderer(PercentCellValue.class, new PercentCellValue.PercentCellValueRenderer());
                         setRowMargin(2);
-                        setDragEnabled(false);
+                        getTableHeader().setReorderingAllowed(false);
                         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                         
                         setModel(new AbstractTableModel() {
                             @Override
-                            public int getRowCount() { return 0; }
+                            public int getRowCount() { return qrl.size(); }
 
                             @Override
                             public int getColumnCount() {
@@ -81,7 +114,21 @@ public class InitializeResultView {
                         
                             @Override
                             public Object getValueAt(int rowIndex, int columnIndex) {
-                                return null;
+                                switch(columnIndex) {
+                                    case 0:
+                                        return qrl.get(rowIndex).test.name;
+                                    case 1:
+                                        return df.format(qrl.get(rowIndex).date);
+                                    case 2:
+                                        return String.format("%1$s [%2$s]", qrl.get(rowIndex).user.getName(), qrl.get(rowIndex).user.getLogin());
+                                    case 3:
+                                        return quiz48.QuizTimer.durationFormat(qrl.get(rowIndex).time() * 1000, true);
+                                    case 4:
+                                        return new PercentCellValue(qrl.get(rowIndex).rating);
+                                    case 5:
+                                        return qrl.get(rowIndex).duplicate;
+                                }
+                                return 0;
                             }
                             
                             @Override
@@ -90,9 +137,9 @@ public class InitializeResultView {
                                     case 0:
                                         return "Название";
                                     case 1:
-                                        return "Дата";
+                                        return "Дата/время";
                                     case 2:
-                                        return "Пользователь";
+                                        return "Тестируемый";
                                     case 3:
                                         return "Затрачено, с.";
                                     case 4:
@@ -106,6 +153,13 @@ public class InitializeResultView {
 
                             @Override
                             public Class<?> getColumnClass(int columnIndex) {
+                                switch(columnIndex) {
+                                    case 4:
+                                        return PercentCellValue.class;
+                                    case 5:
+                                        return Boolean.class;
+                                }
+                                
                                 return super.getColumnClass(columnIndex); 
                             }
                         });
@@ -121,6 +175,32 @@ public class InitializeResultView {
         } }, BorderLayout.CENTER);
         //нижняя панель
         main.add(new JPanel() { {
+            setLayout(new BorderLayout());
+            setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
+            add(new JPanel(), BorderLayout.WEST);
+            add(new JPanel(), BorderLayout.CENTER);
+            add(new JPanel() { {
+                setLayout(new FlowLayout());
+                add(new JButton() { {
+                    setText("<");
+                    setEnabled(false);
+                    prevButton.put(this);
+                } });
+                add(new JTextField() { {
+                    setText("1");
+                    setColumns(4);
+                    setHorizontalAlignment(JTextField.CENTER);
+                    currPageLabel.put(this);
+                } });
+                add(new JLabel() { {
+                    maxPageCountSetter.put(new MaxPageCountSetter(this));
+                    maxPageCountSetter.get().setMaxPasgeCount(pageCount.get());
+                } });
+                add(new JButton() { {
+                    setText(">");
+                    nextButton.put(this);
+                } });
+            } }, BorderLayout.EAST);
         } }, BorderLayout.SOUTH);
         
         bottom.clearButtons();
@@ -134,5 +214,34 @@ public class InitializeResultView {
         
         wnd.revalidate();
         wnd.repaint();
+    }
+    public static void initialize(
+            JFrame wnd, 
+            JPanel main, 
+            BottomPanel bottom, 
+            Runnable initStartWindow, 
+            User u, 
+            ConnectDB conn) {
+        
+        LinkedList<TestResultWithRating> list = new LinkedList<>();
+        TaskQueue.instance().addNewTask(() -> {
+            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка результатов...");
+            try {
+                //LoadingWindow.sleep(2);
+                int page_count = TestResultWithRating.loadResults(conn, (entity) -> {
+                    list.add(entity);
+                }, 0, u.getUserEntity());
+                cb.setInformation("Загрузка результатов...успешно");
+                //LoadingWindow.sleep(1);
+                EventQueue.invokeLater(() -> {
+                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, list, page_count);
+                });
+            } catch (SQLException ex) {
+                cb.setInformation("Загрузка результатов...ошибка", Color.red);
+                LoadingWindow.sleep(3);
+            }
+            cb.exit();
+        });
+        
     }
 }
