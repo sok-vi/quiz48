@@ -34,7 +34,13 @@ public class Quiz48 {
         if(args.length == 1) {
             switch(args[0]) {
                 case "LookAndFeel":
-                    //перечислить список тем графического интерфейса
+                    /**
+                     * перечислить список тем графического интерфейса
+                        javax.swing.plaf.metal.MetalLookAndFeel
+                        javax.swing.plaf.nimbus.NimbusLookAndFeel
+                        com.sun.java.swing.plaf.motif.MotifLookAndFeel
+                        com.sun.java.swing.plaf.gtk.GTKLookAndFeel
+                     */
                     runnable = () -> {
                         for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                             System.out.println(info.getClassName());

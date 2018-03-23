@@ -9,6 +9,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -23,6 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import quiz48.Pointer;
 import quiz48.TaskQueue;
@@ -90,8 +93,10 @@ public class InitializeResultView {
                     currPage.put(newPage.get());
                     prevButton.get().setEnabled(currPage.get() > 0);
                     nextButton.get().setEnabled(currPage.get() < (pageCount.get() - 1));
-                    currPageLabel.get().setText(Integer.toString(currPage.get()));
+                    currPageLabel.get().setText(Integer.toString(currPage.get() + 1));
+                    currPageLabel.get().setBackground(UIManager.getColor("TextField.background"));
                     maxPageCountSetter.get().setMaxPasgeCount(pageCount.get());
+                    tableView.get().revalidate();
                     tableView.get().repaint();
                 });
                 cb.exit();
@@ -228,6 +233,21 @@ public class InitializeResultView {
                     setColumns(4);
                     setHorizontalAlignment(JTextField.CENTER);
                     currPageLabel.put(this);
+                    addKeyListener(new KeyAdapter() {
+                        @Override
+                        public void keyPressed(KeyEvent e) {
+                            if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                try {
+                                    load.setCurrPage(Integer.parseInt(currPageLabel.get().getText()) - 1);
+                                }
+                                catch(NumberFormatException ex) {
+                                    currPageLabel.get().setBackground(Color.red);
+                                }
+                            }
+                            super.keyPressed(e);
+                        }
+                       
+                    });
                 } });
                 add(new JLabel() { {
                     maxPageCountSetter.put(new MaxPageCountSetter(this));

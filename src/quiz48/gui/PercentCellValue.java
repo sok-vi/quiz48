@@ -51,12 +51,14 @@ public class PercentCellValue {
             }
             
             if(isSelected) {
-                setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
-                textPanel.setBackground(UIManager.getColor("Table[Enabled+Selected].textBackground"));
+                setBackground(table.getSelectionBackground());
+                textPanel.setBackground(table.getSelectionBackground());
+                textPanel.setForeground(table.getSelectionForeground());
             }
             else {
-                setBackground(UIManager.getColor("Table.background"));
-                textPanel.setBackground(UIManager.getColor("Table.background"));
+                setBackground(UIManager.getColor("Table.dropCellBackground"));
+                textPanel.setBackground(UIManager.getColor("Table.dropCellBackground"));
+                textPanel.setForeground(UIManager.getColor("Table.dropCellForeground"));
             }
             
             return this;
