@@ -50,7 +50,7 @@ public class TestResultWithRating extends TestResult{
          */
         
         Pointer<Integer> page = new Pointer<>(dbPage);
-        if(page.get() > pageCount) { page.put(pageCount); }
+        if(page.get() >= pageCount) { page.put(pageCount - 1); }
         if(page.get() < 0) { page.put(0); }
         
         HashMap<Integer, User> users = new HashMap<>();
@@ -105,6 +105,6 @@ public class TestResultWithRating extends TestResult{
                 + "(SELECT SUM(q2.weight) FROM query_result qr2 INNER JOIN query q2 ON q2.id=qr2.query_id WHERE qr2.quiz_result_id=qr.id AND qr2.fail=0) AS SUM_W_ACT "
                 + "FROM quiz_result qr%1$s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", u.isAdmin ? "" : " WHERE qr.user_id=?"));
         
-        return count;
+        return pageCount;
     }
 }

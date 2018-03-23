@@ -46,6 +46,10 @@ public class InitializeResultView {
         public final void setMaxPasgeCount(int pageCount) { label.setText(String.format("из %1$s", Integer.toString(pageCount))); }
     }
     
+    private interface LoadDBPage {
+        void setCurrPage(int pageNum);
+    }
+    
     private static void implInitialize(
             JFrame wnd, 
             JPanel main, 
@@ -65,6 +69,34 @@ public class InitializeResultView {
                 nextButton = new Pointer<>();
         Pointer<JTextField> currPageLabel = new Pointer<>();
         Pointer<MaxPageCountSetter> maxPageCountSetter = new Pointer<>();
+        Pointer<JTable> tableView = new Pointer<>();
+        
+        LoadDBPage load = (page) -> {
+            Pointer<Integer> newPage = new Pointer<>(page);
+            if(newPage.get() >= pageCount.get()) { newPage.put(pageCount.get() - 1); }
+            if(newPage.get() < 0) { newPage.put(0); }
+            if((int)newPage.get() == (int)currPage.get()) { return; }
+            
+            TaskQueue.instance().addNewTask(() -> {
+                LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка новой страницы результатов...");
+                try {
+                    qrl.clear();
+                    pageCount.put(TestResultWithRating.loadResults(conn, (entity) -> {
+                        qrl.add(entity);
+                    }, newPage.get(), u.getUserEntity()));
+                } catch (SQLException ex) {
+                }
+                EventQueue.invokeLater(() -> {
+                    currPage.put(newPage.get());
+                    prevButton.get().setEnabled(currPage.get() > 0);
+                    nextButton.get().setEnabled(currPage.get() < (pageCount.get() - 1));
+                    currPageLabel.get().setText(Integer.toString(currPage.get()));
+                    maxPageCountSetter.get().setMaxPasgeCount(pageCount.get());
+                    tableView.get().repaint();
+                });
+                cb.exit();
+            });
+        };
         
         //верхняя панель
         main.add(new JPanel() { {
@@ -102,6 +134,7 @@ public class InitializeResultView {
                         setRowMargin(2);
                         getTableHeader().setReorderingAllowed(false);
                         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                        tableView.put(this);
                         
                         setModel(new AbstractTableModel() {
                             @Override
@@ -185,6 +218,10 @@ public class InitializeResultView {
                     setText("<");
                     setEnabled(false);
                     prevButton.put(this);
+                    setToolTipText("Предыдущая страница");
+                    addActionListener((e) -> {
+                        load.setCurrPage(currPage.get() - 1);
+                    });
                 } });
                 add(new JTextField() { {
                     setText("1");
@@ -199,6 +236,13 @@ public class InitializeResultView {
                 add(new JButton() { {
                     setText(">");
                     nextButton.put(this);
+                    if(pageCount.get() == 1) {
+                        setEnabled(false);
+                    }
+                    addActionListener((e) -> {
+                        load.setCurrPage(currPage.get() + 1);
+                    });
+                    setToolTipText("Следующая страница");
                 } });
             } }, BorderLayout.EAST);
         } }, BorderLayout.SOUTH);
