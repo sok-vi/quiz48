@@ -8,6 +8,7 @@ package quiz48.gui.init;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.SQLException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -16,7 +17,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
+import quiz48.db.orm.TestResultWithRating;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
 import quiz48.gui.User;
@@ -33,6 +36,15 @@ public class InitializeResultView {
             Runnable initStartWindow, 
             User u, 
             ConnectDB conn) {
+        
+        TaskQueue.instance().addNewTask(() -> {
+            try {
+                TestResultWithRating.loadResults(conn, (entity) -> {
+                }, 0, u.getUserEntity());
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
         
         main.removeAll();
         main.setLayout(new BorderLayout());
@@ -64,7 +76,7 @@ public class InitializeResultView {
 
                             @Override
                             public int getColumnCount() {
-                                return 5;
+                                return 6;
                             }
                         
                             @Override
@@ -72,6 +84,7 @@ public class InitializeResultView {
                                 return null;
                             }
                             
+                            @Override
                             public String getColumnName(int column) {
                                 switch(column) {
                                     case 0:
@@ -81,9 +94,11 @@ public class InitializeResultView {
                                     case 2:
                                         return "Пользователь";
                                     case 3:
-                                        return "Заптачено, с.";
+                                        return "Затрачено, с.";
                                     case 4:
                                         return "Оценка, %";
+                                    case 5:
+                                        return "Повторно";
                                 }
                                 
                                 return super.getColumnName(column);

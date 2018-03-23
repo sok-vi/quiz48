@@ -61,7 +61,6 @@ public class TestResult {
         return status.fail;
     }
     
-    public final static int PAGE_SIZE = 10;
     public final int ID;
     private int time;
     private status sv;
@@ -69,7 +68,7 @@ public class TestResult {
     public final Test test;
     public final Timestamp date;
     public final boolean duplicate;
-    //SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
+    
     public TestResult(int ID, int time, User user, Test test, Timestamp date, boolean duplicate, status status) {
         this.ID = ID;
         this.time = time;

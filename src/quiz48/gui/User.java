@@ -59,7 +59,7 @@ public class User {
                             m_UserEntity.getName(), 
                             m_UserEntity.getLogin(), 
                             m_UserEntity.isAdmin ? 
-                                    " (<strong><span color=\"red\">!</span></strong>)" : 
+                                    String.format(" <img src=\"%1$s\"/>", AppIcons.instance().get("stat_admin16.png").toString()) : 
                                     "")));
             up.add(new JButton() {{
                 setText("Изменить...");
