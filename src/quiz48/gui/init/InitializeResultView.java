@@ -288,7 +288,7 @@ public class InitializeResultView {
                 setLayout(new FlowLayout());
                 add(new JButton() { {
                     setText("<");
-                    setEnabled(false);
+                    setEnabled(rvs.page > 0);
                     prevButton.put(this);
                     setToolTipText("Предыдущая страница");
                     addActionListener((e) -> {
@@ -323,9 +323,7 @@ public class InitializeResultView {
                 add(new JButton() { {
                     setText(">");
                     nextButton.put(this);
-                    if(pageCount.get() == 1) {
-                        setEnabled(false);
-                    }
+                    setEnabled(rvs.page + 1 < pageCount.get());
                     addActionListener((e) -> {
                         load.setCurrPage(rvs.page + 1);
                     });

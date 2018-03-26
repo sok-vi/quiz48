@@ -79,15 +79,37 @@ public final class Application {
             });
             
             initResultView.put((rvs) -> {
-                InitializeResultView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, initResultQuestions.get(), rvs);
+                InitializeResultView.initialize(
+                        m_MainWnd, 
+                        m_MainPanel, 
+                        m_BottomPanel, 
+                        initQuizListView.get(), 
+                        m_User, 
+                        m_Conn, 
+                        initResultQuestions.get(), 
+                        rvs);
             });
             
             initTestView.put((t) -> {
-                InitializeTestView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, t, initResultQuestions.get());
+                InitializeTestView.initialize(
+                        m_MainWnd, 
+                        m_MainPanel, 
+                        m_BottomPanel, 
+                        initQuizListView.get(), 
+                        m_User, 
+                        m_Conn, 
+                        t, 
+                        initResultQuestions.get());
             });
             
             initResultQuestions.put((tr, qrs, rvs) -> {
-                InitializeResultQuestionsView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), initResultView.get(), m_Conn, tr, qrs, rvs);
+                InitializeResultQuestionsView.initialize(
+                        m_MainWnd, 
+                        m_MainPanel, 
+                        m_BottomPanel, 
+                        initQuizListView.get(), 
+                        initResultView.get(), 
+                        m_Conn, tr, qrs, rvs);
             });
             
             initQuizListView.get().run();

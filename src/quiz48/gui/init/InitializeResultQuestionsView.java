@@ -7,10 +7,12 @@ package quiz48.gui.init;
 
 import quiz48.gui.PercentCellValue;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.swing.BorderFactory;
@@ -26,6 +28,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import quiz48.Pointer;
 import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
+import quiz48.db.orm.Query;
 import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResult;
 import quiz48.gui.AppIcons;
@@ -247,17 +250,45 @@ public class InitializeResultQuestionsView {
             Pointer<Integer> sumWeight = new Pointer<>(0),
                     sumResult = new Pointer<>(0);
             for(QueryResult qr : qresults) {
-                sumWeight.put(sumWeight.get() + qr.query.weight);
+                //sumWeight.put(sumWeight.get() + qr.query.weight);
                 sumResult.put(sumResult.get() + (qr.fail() == QueryResult.fail.ok ? qr.query.weight : 0));
             }
-
-            if(sumWeight.get() == 0) { sumWeight.put(0); }
-            EventQueue.invokeLater(() -> {
-                implInitialize(wnd, main, bottom, initStartWindow, initStatWindow, conn, current, qresults, sumWeight.get(), sumResult.get(), rvs);
-            });
             
             cb.setInformation("Формирование результатов теста...успешно");
             LoadingWindow.sleep(1);
+            boolean suscess = true;
+            
+            try {
+                cb.setInformation("Оценка вопросов...");
+                Query.loadQuerys(conn, (entity) -> {
+                    sumWeight.put(sumWeight.get() + entity.weight);
+                }, current.test);
+                if(sumWeight.get() == 0) { sumWeight.put(1); }
+
+                cb.setInformation("Оценка вопросов... успешно");
+
+                EventQueue.invokeLater(() -> {
+                    implInitialize(
+                            wnd, 
+                            main, 
+                            bottom, 
+                            initStartWindow, 
+                            initStatWindow, 
+                            conn, 
+                            current, 
+                            qresults, 
+                            sumWeight.get(), 
+                            sumResult.get(), 
+                            rvs);
+                });
+
+                LoadingWindow.sleep(1);
+            } catch (SQLException ex) {
+                cb.setInformation("Оценка вопросов... ошибка", Color.RED);
+                LoadingWindow.sleep(3);
+                suscess = false;
+            }
+
             cb.exit();
         });
     }
