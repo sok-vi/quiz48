@@ -41,7 +41,7 @@ import quiz48.gui.QueryResultDetailViewDlg;
 public class InitializeResultQuestionsView {
     
     public interface SetCurrentTestResult {
-        void run(TestResult r, List<QueryResult> qrs);
+        void run(TestResult r, List<QueryResult> qrs, InitializeResultView.ResultViewState rvs);
     }
     
     private final static class ResultCellRenderer extends DefaultTableCellRenderer {
@@ -63,7 +63,8 @@ public class InitializeResultQuestionsView {
             TestResult current,
             List<QueryResult> qresults,
             int sumWeight,
-            int sumResult) {
+            int sumResult,
+            InitializeResultView.ResultViewState rvs) {
         main.removeAll();
         main.setLayout(new BorderLayout());
         
@@ -234,7 +235,8 @@ public class InitializeResultQuestionsView {
             Runnable initStatWindow, 
             ConnectDB conn, 
             TestResult current,
-            List<QueryResult> qresults) {
+            List<QueryResult> qresults,
+            InitializeResultView.ResultViewState rvs) {
         
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Формирование результатов теста...");
@@ -249,7 +251,7 @@ public class InitializeResultQuestionsView {
 
             if(sumWeight.get() == 0) { sumWeight.put(0); }
             EventQueue.invokeLater(() -> {
-                implInitialize(wnd, main, bottom, initStartWindow, initStatWindow, conn, current, qresults, sumWeight.get(), sumResult.get());
+                implInitialize(wnd, main, bottom, initStartWindow, initStatWindow, conn, current, qresults, sumWeight.get(), sumResult.get(), rvs);
             });
             
             cb.setInformation("Формирование результатов теста...успешно");

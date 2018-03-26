@@ -536,7 +536,7 @@ public class InitializeTestView {
                             }
                             EventQueue.invokeAndWait(() -> {
                                 timerPtr.get().stop();//остановить таймер
-                                initResultView.run(tresult, queryResults);//вывод результатов
+                                initResultView.run(tresult, queryResults, null);//вывод результатов
                             });
                         }
                         

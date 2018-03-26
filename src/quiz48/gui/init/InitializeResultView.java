@@ -43,6 +43,10 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeResultView {
+    public final static class ResultViewState {
+        public int page = 0;
+    }
+    
     private static final class MaxPageCountSetter {
         private final JLabel label;
         public MaxPageCountSetter(JLabel label) { this.label = label; }
@@ -61,13 +65,13 @@ public class InitializeResultView {
             User u, 
             ConnectDB conn,
             LinkedList<TestResultWithRating> qrl,
-            int page_count) {
+            int page_count,
+            ResultViewState rvs) {
         main.removeAll();
         main.setLayout(new BorderLayout());
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
         
-        Pointer<Integer> currPage = new Pointer<>(0),
-                pageCount = new Pointer<>(page_count);
+        Pointer<Integer> pageCount = new Pointer<>(page_count);
         Pointer<JButton> prevButton = new Pointer<>(),
                 nextButton = new Pointer<>();
         Pointer<JTextField> currPageLabel = new Pointer<>();
@@ -78,22 +82,28 @@ public class InitializeResultView {
             Pointer<Integer> newPage = new Pointer<>(page);
             if(newPage.get() >= pageCount.get()) { newPage.put(pageCount.get() - 1); }
             if(newPage.get() < 0) { newPage.put(0); }
-            if((int)newPage.get() == (int)currPage.get()) { return; }
+            if((int)newPage.get() == (int)rvs.page) { return; }
             
             TaskQueue.instance().addNewTask(() -> {
                 LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка новой страницы результатов...");
                 try {
                     qrl.clear();
-                    pageCount.put(TestResultWithRating.loadResults(conn, (entity) -> {
-                        qrl.add(entity);
-                    }, newPage.get(), u.getUserEntity()));
+                    TestResultWithRating.LoadPageInfo page_info = 
+                            TestResultWithRating.loadResults(
+                                    conn, 
+                                    (entity) -> { 
+                                        qrl.add(entity); 
+                                    }, 
+                                    newPage.get(), 
+                                    u.getUserEntity());
+                    pageCount.put(page_info.pageCount);
                 } catch (SQLException ex) {
                 }
                 EventQueue.invokeLater(() -> {
-                    currPage.put(newPage.get());
-                    prevButton.get().setEnabled(currPage.get() > 0);
-                    nextButton.get().setEnabled(currPage.get() < (pageCount.get() - 1));
-                    currPageLabel.get().setText(Integer.toString(currPage.get() + 1));
+                    rvs.page = newPage.get();
+                    prevButton.get().setEnabled(rvs.page > 0);
+                    nextButton.get().setEnabled(rvs.page < (pageCount.get() - 1));
+                    currPageLabel.get().setText(Integer.toString(rvs.page + 1));
                     currPageLabel.get().setBackground(UIManager.getColor("TextField.background"));
                     maxPageCountSetter.get().setMaxPasgeCount(pageCount.get());
                     tableView.get().revalidate();
@@ -225,7 +235,7 @@ public class InitializeResultView {
                     prevButton.put(this);
                     setToolTipText("Предыдущая страница");
                     addActionListener((e) -> {
-                        load.setCurrPage(currPage.get() - 1);
+                        load.setCurrPage(rvs.page - 1);
                     });
                 } });
                 add(new JTextField() { {
@@ -260,7 +270,7 @@ public class InitializeResultView {
                         setEnabled(false);
                     }
                     addActionListener((e) -> {
-                        load.setCurrPage(currPage.get() + 1);
+                        load.setCurrPage(rvs.page + 1);
                     });
                     setToolTipText("Следующая страница");
                 } });
@@ -285,20 +295,23 @@ public class InitializeResultView {
             BottomPanel bottom, 
             Runnable initStartWindow, 
             User u, 
-            ConnectDB conn) {
+            ConnectDB conn,
+            ResultViewState rvs) {
         
+        ResultViewState _rvs = (rvs == null) ? new ResultViewState() : rvs;
         LinkedList<TestResultWithRating> list = new LinkedList<>();
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка результатов...");
             try {
                 //LoadingWindow.sleep(2);
-                int page_count = TestResultWithRating.loadResults(conn, (entity) -> {
+                TestResultWithRating.LoadPageInfo page_info = TestResultWithRating.loadResults(conn, (entity) -> {
                     list.add(entity);
-                }, 0, u.getUserEntity());
+                }, _rvs.page, u.getUserEntity());
+                _rvs.page = page_info.currPage;
                 cb.setInformation("Загрузка результатов...успешно");
                 //LoadingWindow.sleep(1);
                 EventQueue.invokeLater(() -> {
-                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, list, page_count);
+                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, list, page_info.pageCount, _rvs);
                 });
             } catch (SQLException ex) {
                 cb.setInformation("Загрузка результатов...ошибка", Color.red);

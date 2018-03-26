@@ -17,6 +17,11 @@ import quiz48.db.ConnectDB;
  * @author vasya
  *///SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
 public class TestResultWithRating extends TestResult{
+    public final static class LoadPageInfo {
+        public final int currPage, pageCount;
+        public LoadPageInfo(int curr, int count) { currPage = curr; pageCount = count; }
+    }
+    
     private final static int PAGE_SIZE = 10;
     public final double rating;
     
@@ -39,7 +44,7 @@ public class TestResultWithRating extends TestResult{
         return count.get();
     }
     
-    public static int loadResults(ConnectDB conn, EntityAccess<TestResultWithRating> ea, int dbPage, User u) throws SQLException {
+    public static LoadPageInfo loadResults(ConnectDB conn, EntityAccess<TestResultWithRating> ea, int dbPage, User u) throws SQLException {
         int count = getPageCount(conn);
         int pageCount = count / PAGE_SIZE;
         if((pageCount * PAGE_SIZE) < count) { ++pageCount; }
@@ -105,6 +110,6 @@ public class TestResultWithRating extends TestResult{
                 + "(SELECT SUM(q2.weight) FROM query_result qr2 INNER JOIN query q2 ON q2.id=qr2.query_id WHERE qr2.quiz_result_id=qr.id AND qr2.fail=0) AS SUM_W_ACT "
                 + "FROM quiz_result qr%1$s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", u.isAdmin ? "" : " WHERE qr.user_id=?"));
         
-        return pageCount;
+        return new LoadPageInfo(page.get(), pageCount);
     }
 }

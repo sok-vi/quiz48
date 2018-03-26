@@ -6,6 +6,7 @@
 package quiz48.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -56,9 +57,23 @@ public class PercentCellValue {
                 textPanel.setForeground(table.getSelectionForeground());
             }
             else {
-                setBackground(UIManager.getColor("Table.dropCellBackground"));
-                textPanel.setBackground(UIManager.getColor("Table.dropCellBackground"));
-                textPanel.setForeground(UIManager.getColor("Table.dropCellForeground"));
+                Color background = table.getBackground(),
+                        foreground = table.getForeground();
+                
+                if(background instanceof javax.swing.plaf.UIResource) {
+                    Color alternateColor = UIManager.getColor("Table.alternateRowColor");
+                    if(alternateColor != null && row % 2 != 0) {
+                        background = alternateColor;
+                    }
+                    else {
+                        background = new Color(table.getBackground().getRGB());
+                    }
+                }
+                
+                setBackground(background);
+                textPanel.setBackground(background);
+                textPanel.setForeground(foreground);
+                prog.setBackground(background);
             }
             
             return this;
