@@ -58,7 +58,7 @@ public class InitializeResultQuestionsView {
             JPanel main, 
             BottomPanel bottom, 
             Runnable initStartWindow, 
-            Runnable initStatWindow, 
+            InitializeResultView.ShowTestResultView initStatWindow, 
             ConnectDB conn, 
             TestResult current,
             List<QueryResult> qresults,
@@ -213,7 +213,9 @@ public class InitializeResultQuestionsView {
             setText("<К списку результатов тестов");
             setHorizontalTextPosition(JButton.LEFT);
             setIcon(AppIcons.instance().get("result_view32.png"));
-            addActionListener((e) -> { initStatWindow.run(); });
+            addActionListener((e) -> { 
+                initStatWindow.run(rvs); 
+            });
         } });
         
         bottom.addButton(new JButton() { {
@@ -232,7 +234,7 @@ public class InitializeResultQuestionsView {
             JPanel main, 
             BottomPanel bottom, 
             Runnable initStartWindow, 
-            Runnable initStatWindow, 
+            InitializeResultView.ShowTestResultView initStatWindow, 
             ConnectDB conn, 
             TestResult current,
             List<QueryResult> qresults,

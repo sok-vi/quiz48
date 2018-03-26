@@ -46,7 +46,7 @@ public class InitializeQuizListView {
             JFrame wnd, 
             JPanel main, 
             BottomPanel bottom, 
-            Runnable initStatWindow, 
+            InitializeResultView.ShowTestResultView initStatWindow, 
             User u, 
             ConnectDB conn, 
             InitializeTestView.SetCurrentTest InitTestWindow) {
@@ -68,7 +68,7 @@ public class InitializeQuizListView {
                     setText("Результаты");
                     setIcon(AppIcons.instance().get("result_view32.png"));
                     addActionListener((e) -> {
-                        initStatWindow.run();
+                        initStatWindow.run(null);
                     });
                 } }); 
             } }, BorderLayout.EAST);

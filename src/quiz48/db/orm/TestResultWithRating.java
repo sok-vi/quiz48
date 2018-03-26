@@ -16,7 +16,7 @@ import quiz48.db.ConnectDB;
  *
  * @author vasya
  *///SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
-public class TestResultWithRating extends TestResult{
+public class TestResultWithRating extends TestResult {
     public final static class LoadPageInfo {
         public final int currPage, pageCount;
         public LoadPageInfo(int curr, int count) { currPage = curr; pageCount = count; }

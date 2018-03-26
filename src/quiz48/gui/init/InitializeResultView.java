@@ -30,6 +30,8 @@ import javax.swing.table.AbstractTableModel;
 import quiz48.Pointer;
 import quiz48.TaskQueue;
 import quiz48.db.ConnectDB;
+import quiz48.db.orm.Query;
+import quiz48.db.orm.QueryResult;
 import quiz48.db.orm.TestResultWithRating;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
@@ -43,8 +45,13 @@ import quiz48.gui.User;
  * @author vasya
  */
 public class InitializeResultView {
+    
     public final static class ResultViewState {
         public int page = 0;
+    }
+    
+    public interface ShowTestResultView {
+        void run(ResultViewState rvs);
     }
     
     private static final class MaxPageCountSetter {
@@ -64,6 +71,7 @@ public class InitializeResultView {
             Runnable initStartWindow, 
             User u, 
             ConnectDB conn,
+            InitializeResultQuestionsView.SetCurrentTestResult initTestResultView,
             LinkedList<TestResultWithRating> qrl,
             int page_count,
             ResultViewState rvs) {
@@ -128,7 +136,16 @@ public class InitializeResultView {
                                     "",
                             AppIcons.instance().get("user48.png").toString())), BorderLayout.WEST);
             add(new JPanel(), BorderLayout.CENTER);
-            add(new JLabel(AppIcons.instance().get("test_result64.png")), BorderLayout.EAST);
+            add(new JPanel() { {
+                setLayout(new FlowLayout(FlowLayout.RIGHT));
+                add(new JButton() { {
+                    setText("Построить отчёт по результатам...");
+                    setIcon(AppIcons.instance().get("report32.png"));
+                    addActionListener((e) -> {
+                    });
+                } });
+                add(new JLabel(AppIcons.instance().get("test_result64.png")));
+            } }, BorderLayout.EAST);
         } }, BorderLayout.NORTH);
         //таблица
         main.add(new JPanel() { {
@@ -212,9 +229,43 @@ public class InitializeResultView {
                             }
                         });
                             
+                        final Pointer<JTable> table = new Pointer<>(this);
                         addMouseListener(new MouseAdapter() {
                             @Override
                             public void mouseClicked(MouseEvent e) {
+                                if(e.getClickCount() > 1) {
+                                    int sel = table.get().getSelectedRow();
+                                    if(sel >= 0) {
+                                        TaskQueue.instance().addNewTask(() -> {
+                                            LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка ответов на вопросы...");
+                                            TestResultWithRating trwr = qrl.get(sel);
+                                            LinkedList<QueryResult> queryResults = new LinkedList<>();
+                                            LoadingWindow.sleep(2);
+                                            try {
+                                                Query.loadQuerys(conn, (entity) -> {
+                                                    try {
+                                                        QueryResult qr0 = QueryResult.loadQueryResult(conn, trwr, entity);
+                                                        if(qr0 != null) { queryResults.add(qr0); }
+                                                    } catch (SQLException ex) {
+                                                        cb.setInformation("Загрузка ответов на вопросы... ошибку", Color.RED);
+                                                        LoadingWindow.sleep(3);
+                                                        System.exit(0);
+                                                    }
+                                                }, trwr.test);
+                                                cb.setInformation("Загрузка ответов на вопросы... успешно");
+                                            } catch (SQLException ex) {
+                                                cb.setInformation("Загрузка ответов на вопросы... ошибку", Color.RED);
+                                                LoadingWindow.sleep(3);
+                                                System.exit(0);
+                                            }
+                                            EventQueue.invokeLater(() -> {
+                                                initTestResultView.run(trwr, queryResults, rvs);
+                                            });
+                                            LoadingWindow.sleep(1);
+                                            cb.exit();
+                                        });
+                                    }
+                                }
                                 super.mouseClicked(e);
                             }
                         });
@@ -225,7 +276,13 @@ public class InitializeResultView {
         main.add(new JPanel() { {
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
-            add(new JPanel(), BorderLayout.WEST);
+            add(new JPanel() { {
+                setLayout(new FlowLayout(FlowLayout.LEFT));
+                add(new JButton() { {
+                    setIcon(AppIcons.instance().get("add_filter16.png"));
+                    setText("Добавить фильтр...");
+                } });
+            } }, BorderLayout.WEST);
             add(new JPanel(), BorderLayout.CENTER);
             add(new JPanel() { {
                 setLayout(new FlowLayout());
@@ -239,7 +296,7 @@ public class InitializeResultView {
                     });
                 } });
                 add(new JTextField() { {
-                    setText("1");
+                    setText(Integer.toString(rvs.page + 1));
                     setColumns(4);
                     setHorizontalAlignment(JTextField.CENTER);
                     currPageLabel.put(this);
@@ -296,6 +353,7 @@ public class InitializeResultView {
             Runnable initStartWindow, 
             User u, 
             ConnectDB conn,
+            InitializeResultQuestionsView.SetCurrentTestResult initTestResultView,
             ResultViewState rvs) {
         
         ResultViewState _rvs = (rvs == null) ? new ResultViewState() : rvs;
@@ -311,7 +369,7 @@ public class InitializeResultView {
                 cb.setInformation("Загрузка результатов...успешно");
                 //LoadingWindow.sleep(1);
                 EventQueue.invokeLater(() -> {
-                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, list, page_info.pageCount, _rvs);
+                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, initTestResultView, list, page_info.pageCount, _rvs);
                 });
             } catch (SQLException ex) {
                 cb.setInformation("Загрузка результатов...ошибка", Color.red);

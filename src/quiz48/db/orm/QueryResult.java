@@ -30,6 +30,27 @@ public class QueryResult {
         private fail(int iv) { value = iv; }
         public int fail2int() { return value; }
         
+        public static fail int2fail(int iv) {
+            switch(iv) {
+                case 0:
+                    return ok;
+                case 2:
+                    return timeout_ok;
+                case 3:
+                    return timeout_fail;
+                case 4:
+                    return timeout_test_ok;
+                case 5:
+                    return timeout_test_fail;
+                case 6:
+                    return qu_timeout_test_ok;
+                case 7:
+                    return qu_timeout_test_fail;
+            }
+            
+            return fail;
+        }
+        
         public final String getResultString() {
             switch(value) {
                 case 1:
@@ -139,5 +160,42 @@ public class QueryResult {
         }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail, duplicate) VALUES(?, ?, ?, ?, ?, ?)");
         
         return new QueryResult(tr, q, time, answer, fv, qResExist.get());
+    }
+    
+    public static QueryResult loadQueryResult(ConnectDB conn, TestResult tr, Query q) throws SQLException {
+        Pointer<Boolean> exists = new Pointer<>(false);
+        
+        conn.executeQuery((s) -> {
+            s.setInt(1, tr.ID);
+            s.setInt(2, q.ID);
+            ResultSet rs = s.executeQuery();
+            if(rs.next()) { exists.put(rs.getInt("CNT") > 0); }
+            else { throw new SQLException("fail"); }
+        }, "SELECT COUNT(*) AS CNT FROM query_result WHERE quiz_result_id=? AND query_id=?");
+        
+        if(!exists.get()) { return null; }
+        
+        Pointer<QueryResult> result = new Pointer<>();
+        
+        conn.executeQuery((s) -> {
+            s.setInt(1, tr.ID);
+            s.setInt(2, q.ID);
+            ResultSet rs = s.executeQuery();
+            if(rs.next()) {
+                result.put(
+                        new QueryResult(
+                                tr, 
+                                q, 
+                                rs.getInt("time"), 
+                                rs.getString("answer"), 
+                                fail.int2fail(rs.getInt("fail")), 
+                                rs.getInt("duplicate") == 1
+                        )
+                );
+            }
+            else { throw new SQLException("fail"); }
+        }, "SELECT * FROM query_result WHERE quiz_result_id=? AND query_id=?");
+        
+        return result.get();
     }
 }

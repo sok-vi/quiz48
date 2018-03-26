@@ -63,7 +63,7 @@ public final class Application {
             });
             
             Pointer<Runnable> initQuizListView = new Pointer<>();
-            Pointer<Runnable> initResultView = new Pointer<>();
+            Pointer<InitializeResultView.ShowTestResultView> initResultView = new Pointer<>();
             Pointer<InitializeTestView.SetCurrentTest> initTestView = new Pointer<>();
             Pointer<InitializeResultQuestionsView.SetCurrentTestResult> initResultQuestions = new Pointer<>();
             
@@ -78,8 +78,8 @@ public final class Application {
                         initTestView.get());
             });
             
-            initResultView.put(() -> {
-                InitializeResultView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, null);
+            initResultView.put((rvs) -> {
+                InitializeResultView.initialize(m_MainWnd, m_MainPanel, m_BottomPanel, initQuizListView.get(), m_User, m_Conn, initResultQuestions.get(), rvs);
             });
             
             initTestView.put((t) -> {
