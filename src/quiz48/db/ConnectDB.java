@@ -18,7 +18,7 @@ import quiz48.AppProperties;
  * создаёт Statement для выполнения запросов
  * @author vasja
  */
-public final class ConnectDB {
+public final class ConnectDB implements AutoCloseable {
     private static ConnectDB sInstance = null;
     private final static Object sSynch = new Object();
     
@@ -33,6 +33,12 @@ public final class ConnectDB {
     private Connection m_Derby = null;
     private final Object m_Synch = new Object();
     
+    public static final ConnectDB connect(String dbPath, String dbLogin, String dbPassword) throws SQLException {
+        ConnectDB conn = new ConnectDB();
+        conn.m_Derby = DriverManager.getConnection("jdbc:derby:" + dbPath, dbLogin, dbPassword);
+        return conn;
+    }
+    
     public final boolean connect() throws SQLException {
         if(m_Derby != null) { return true; }
         
@@ -43,6 +49,7 @@ public final class ConnectDB {
         return (m_Derby != null);
     }
     
+    @Override
     public final void close() {
         try {
             if((m_Derby != null) &&

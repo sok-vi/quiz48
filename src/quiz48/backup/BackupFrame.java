@@ -14,6 +14,7 @@ import java.awt.Insets;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -29,8 +30,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import quiz48.AppProperties;
 import quiz48.PackageLocation;
 import quiz48.Pointer;
+import quiz48.TaskQueue;
 import quiz48.WindowLocation;
+import quiz48.db.ConnectDB;
 import quiz48.gui.AppIcons;
+import quiz48.gui.LoadingWindow;
 
 /**
  *
@@ -380,6 +384,30 @@ public class BackupFrame extends JFrame {
                 setText("Запустить создание резервной копии...");
                 setIcon(AppIcons.instance().get("runprog.png"));
                 addActionListener((e) -> {
+                    String _dbPath = tf_db_paht.get().getText(),
+                            _dbLogin = tf_db_login.get().getText(),
+                            _dbPass = new String(pf_db_pwd.get().getPassword()),
+                            _backupPath = tf_backup_path.get().getText();
+                    Boolean _sUsers = ch_users.get().isSelected(),
+                            _sResults = ch_results.get().isSelected();
+                    TaskQueue.instance().addNewTask(() -> {
+                        LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Подключение к БД...");
+                        try {
+                            try(ConnectDB conn = ConnectDB.connect(
+                                    _dbPath, 
+                                    _dbLogin, 
+                                    _dbPass)) {
+                                cb.setInformation("Подключение к БД... успешно");
+                                Backup.storeBackup(conn, _sUsers, _sResults, _backupPath, cb);
+                            }
+                        } catch (Exception ex) {
+                            cb.setInformation(ex.toString(), Color.RED);
+                            LoadingWindow.sleep(5);
+                        }
+                        cb.setInformation(String.format("Бэкап создан {%1$s}", _backupPath));
+                        LoadingWindow.sleep(2);
+                        cb.exit();
+                    });
                 });
                 bt_start.put(this);
             } });
