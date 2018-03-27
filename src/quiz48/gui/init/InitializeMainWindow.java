@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import quiz48.TaskQueue;
 import quiz48.WindowLocation;
 import quiz48.db.ConnectDB;
+import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
 import quiz48.gui.LoadingWindow;
 
@@ -30,6 +31,7 @@ public class InitializeMainWindow {
     public static void initialize(JFrame wnd, SetterPannels s) {
         wnd.setTitle("Учебные тесты Quiz48");
         wnd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        wnd.setIconImage(AppIcons.instance().get("icon.png").getImage());
         WindowLocation.WindowSetCenterScreenLocation23(wnd);
         wnd.addWindowListener(new WindowAdapter() {
             @Override

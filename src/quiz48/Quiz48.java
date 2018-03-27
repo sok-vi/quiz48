@@ -13,6 +13,8 @@ import javax.swing.JFrame;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import quiz48.backup.BackupFrame;
+import quiz48.backup.RestoreFrame;
 import quiz48.gui.LoadingWindow;
 /**
  *
@@ -57,7 +59,26 @@ public class Quiz48 {
                         });
                     };
                     break;
-                default:
+                case "backup":
+                    //сделать бэкап
+                    runnable = () -> {
+                        EventQueue.invokeLater(() -> {
+                            BackupFrame f = new BackupFrame();
+                            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                            f.setVisible(true);
+                        });
+                    };
+                    break;
+                case "restore":
+                    //сделать бэкап
+                    runnable = () -> {
+                        EventQueue.invokeLater(() -> {
+                            RestoreFrame f = new RestoreFrame();
+                            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                            f.setVisible(true);
+                        });
+                    };
+                    break;
             }
         }
         else {
