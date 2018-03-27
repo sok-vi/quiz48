@@ -42,6 +42,19 @@ public final class Backup {
             TYPE_QUERY_ANSWER = 6,
             TYPE_CONTENT = 7;
     
+    private static class BlockTitle {
+        public byte type;
+        public int length, count;
+    }
+    
+    private static class StoreBlockInfo extends BlockTitle {
+        public String tmpPath;
+    }
+    
+    private static void storeUsers(ConnectDB conn) {
+        
+    }
+    
     public static void storeBackup(
             ConnectDB conn, 
             /*вопросы обязательно*/
@@ -66,6 +79,7 @@ public final class Backup {
                                 (user ? STORE_USERS : 0) |
                                 (result ? STORE_RESULTS : 0) |
                                 (exContent ? STORE_CONTENT : 0));
+                
             }
         }
     }
