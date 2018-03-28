@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import quiz48.AppProperties;
 import quiz48.PackageLocation;
@@ -352,19 +353,14 @@ public class BackupFrame extends JFrame {
                         addActionListener((e) -> {
                             File f = new File(tf_backup_path.get().getText());
                             JFileChooser fod = new JFileChooser();
-                            fod.setFileFilter(new FileNameExtensionFilter("Quiz48 backup", "quiz.backup"));
+                            fod.setFileFilter(new BackupFileFilter());
                             fod.setDialogType(JFileChooser.SAVE_DIALOG);
                             fod.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                            if(f.exists()) {
-                                fod.setSelectedFile(f);
-                            }
-                            else {
-                                fod.setCurrentDirectory(new File(f.getAbsolutePath().substring(0, f.getAbsolutePath().lastIndexOf(File.separator))));
-                            }
+                            fod.setSelectedFile(f);
                             int ret = fod.showDialog(thisFrame.get(), "Сохранить файл");
                             if(ret == JFileChooser.APPROVE_OPTION) {
                                 File rf = fod.getSelectedFile();
-                                if(rf.toPath().endsWith(".quiz.backup")) {
+                                if(rf.getAbsolutePath().endsWith(".quiz.backup")) {
                                     tf_backup_path.get().setText(rf.getAbsolutePath());
                                 }
                                 else {
