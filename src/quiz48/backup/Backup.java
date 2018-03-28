@@ -73,15 +73,19 @@ public final class Backup {
         return count.get();
     }
     
-    private static void storeUsers(ConnectDB conn, StoreBlockInfo sbi, DataOutputStream dto) throws SQLException {
-        Pointer<Integer> count = new Pointer<>(getRecordCount(conn, "users"));
-
+    private static int getPageCount(int recordCount) {
         int page_count = 0;
-        if(count.get() > 0) {
-            page_count = count.get() / DB_PAGE_SIZE;
-            if((page_count * DB_PAGE_SIZE) < count.get()) { ++page_count; }
+        if(recordCount > 0) {
+            page_count = recordCount / DB_PAGE_SIZE;
+            if((page_count * DB_PAGE_SIZE) < recordCount) { ++page_count; }
         }
         
+        return page_count;
+    }
+    
+    private static void storeUsers(ConnectDB conn, StoreBlockInfo sbi, DataOutputStream dto) throws SQLException {
+        Pointer<Integer> count = new Pointer<>(getRecordCount(conn, "users"));
+        int page_count = getPageCount(count.get());
         count.put(0);
         Pointer<Integer> page = new Pointer<>();
         
@@ -108,7 +112,7 @@ public final class Backup {
         sbi.count = count.get();
     }
     
-    private static void storeQuiz(ConnectDB conn, StoreBlockInfo sbi, DataOutputStream dto) throws SQLException {
+    private static void storeQuiz(ConnectDB conn, StoreBlockInfo sbi, DataOutputStream dto, boolean result) throws SQLException {
         
     }
     
