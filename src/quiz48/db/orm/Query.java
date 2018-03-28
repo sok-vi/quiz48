@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.Random;
+import quiz48.AppProperties;
 import quiz48.PackageLocation;
 import quiz48.db.ConnectDB;
 
@@ -28,8 +29,7 @@ public class Query {
     public final LinkedList<String> answers = new LinkedList<>();
     
     private static String contentPath(String contentPath) {
-        return PackageLocation.thisPackagePath + 
-                ("content/" + contentPath).replace(
+        return AppProperties.ContentPath + contentPath.replace(
                         File.separatorChar == '\\' ? "/" : "\\", 
                         File.separator);
     }

@@ -48,12 +48,15 @@ public class BackupFrame extends JFrame {
         Pointer<JCheckBox> ch_tests = new Pointer<>(),
                 ch_users = new Pointer<>(),
                 ch_results = new Pointer<>(),
-                ch_default_db = new Pointer<>();
+                ch_default_db = new Pointer<>(),
+                ch_include_content = new Pointer<>();
         Pointer<JButton> bt_start = new Pointer<>(),
-                bt_sel_db_path = new Pointer<>();
+                bt_sel_db_path = new Pointer<>(),
+                bt_include_content = new Pointer<>();
         Pointer<JLabel> lb_db_path = new Pointer<>(),
                 lb_db_login = new Pointer<>(),
-                lb_db_pwd = new Pointer<>();
+                lb_db_pwd = new Pointer<>(),
+                lb_include_content = new Pointer<>();
         Pointer<JTextField> tf_db_paht = new Pointer<>(),
                 tf_db_login = new Pointer<>(),
                 tf_content_path = new Pointer<>(),
@@ -151,7 +154,7 @@ public class BackupFrame extends JFrame {
                     _cc0.gridy = 0;
                     _cc0.weightx = 100;
                     _cc0.weighty = 0;
-                    _cc0.gridwidth = 2;
+                    _cc0.gridwidth = 3;
                     _cc0.gridheight = 1;
                     _cc0.insets = _is1;
                     _cc0.fill = GridBagConstraints.NONE;
@@ -165,7 +168,7 @@ public class BackupFrame extends JFrame {
                     
                     _cc0.gridx = 0;
                     _cc0.gridy = 1;
-                    _cc0.weightx = 0;
+                    _cc0.weightx = 100;
                     _cc0.weighty = 0;
                     _cc0.gridwidth = 1;
                     _cc0.gridheight = 1;
@@ -230,7 +233,7 @@ public class BackupFrame extends JFrame {
                     
                     _cc0.gridx = 0;
                     _cc0.gridy = 2;
-                    _cc0.weightx = 0;
+                    _cc0.weightx = 100;
                     _cc0.weighty = 0;
                     _cc0.gridwidth = 1;
                     _cc0.gridheight = 1;
@@ -259,7 +262,7 @@ public class BackupFrame extends JFrame {
                     
                     _cc0.gridx = 0;
                     _cc0.gridy = 3;
-                    _cc0.weightx = 0;
+                    _cc0.weightx = 100;
                     _cc0.weighty = 0;
                     _cc0.gridwidth = 1;
                     _cc0.gridheight = 1;
@@ -291,81 +294,111 @@ public class BackupFrame extends JFrame {
             
             _cc.gridx = 0;
             _cc.gridy = 2;
-            _cc.weightx = 0;
+            _cc.weightx = 100;
             _cc.weighty = 0;
             _cc.gridwidth = 3;
             _cc.gridheight = 1;
             _cc.insets = _is1;
-            _cc.fill = GridBagConstraints.NONE;
-            _cc.anchor = GridBagConstraints.EAST;
+            _cc.fill = GridBagConstraints.HORIZONTAL;
+            _cc.anchor = GridBagConstraints.CENTER;
             add(new JPanel() { {
                 setLayout(new BorderLayout());
-                setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                add(new JPanel() { {
-                    setLayout(new GridBagLayout());
-                    
-                    GridBagConstraints _cc0 = new GridBagConstraints();
-                    
-                    _cc0.gridx = 0;
-                    _cc0.gridy = 0;
-                    _cc0.weightx = 0;
-                    _cc0.weighty = 0;
-                    _cc0.gridwidth = 1;
-                    _cc0.gridheight = 1;
-                    _cc0.insets = _is1;
-                    _cc0.fill = GridBagConstraints.NONE;
-                    _cc0.anchor = GridBagConstraints.EAST;
-                    add(new JLabel("Путь к контенту:"), _cc0);
-                    
-                    _cc0.gridx = 1;
-                    _cc0.gridy = 0;
-                    _cc0.weightx = 0;
-                    _cc0.weighty = 0;
-                    _cc0.gridwidth = 1;
-                    _cc0.gridheight = 1;
-                    _cc0.insets = _is1;
-                    _cc0.fill = GridBagConstraints.NONE;
-                    _cc0.anchor = GridBagConstraints.WEST;
-                    add(new JTextField() { {
-                        setColumns(25);
-                        setText(PackageLocation.thisPackagePath + "content" + File.separator);
-                        tf_content_path.put(this);
-                    } }, _cc0);
-                    
-                    _cc0.gridx = 2;
-                    _cc0.gridy = 0;
-                    _cc0.weightx = 0;
-                    _cc0.weighty = 0;
-                    _cc0.gridwidth = 1;
-                    _cc0.gridheight = 1;
-                    _cc0.insets = _is1;
-                    _cc0.fill = GridBagConstraints.NONE;
-                    _cc0.anchor = GridBagConstraints.CENTER;
-                    add(new JButton() { {
-                        setText("...");
-                        addActionListener((e) -> {
-                            File f = new File(tf_content_path.get().getText());
-                            JFileChooser fod = new JFileChooser();
-                            fod.setDialogType(JFileChooser.OPEN_DIALOG);
-                            fod.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                            if(f.exists()) {
-                                fod.setSelectedFile(f);
-                            }
-                            else {
-                                fod.setCurrentDirectory(new File(f.getAbsolutePath().substring(0, f.getAbsolutePath().lastIndexOf(File.separator))));
-                            }
-                            fod.setDialogTitle("Указать расположение контента");
-                            int ret = fod.showDialog(thisFrame.get(), "Открыть..");
-                            if(ret == JFileChooser.APPROVE_OPTION) {
-                                String dir = fod.getSelectedFile().getAbsolutePath();
-                                if((dir.length() > 0) && 
-                                        (dir.charAt(dir.length() - 1) != '\\')) { 
-                                    dir += "\\"; 
+                setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Контент"));
+                add(
+                    new JPanel() { {
+                    setLayout(new BorderLayout());
+                    setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                    add(new JPanel() { {
+                        setLayout(new GridBagLayout());
+
+                        GridBagConstraints _cc0 = new GridBagConstraints();
+
+                        _cc0.gridx = 0;
+                        _cc0.gridy = 0;
+                        _cc0.weightx = 0;
+                        _cc0.weighty = 0;
+                        _cc0.gridwidth = 3;
+                        _cc0.gridheight = 1;
+                        _cc0.insets = _is1;
+                        _cc0.fill = GridBagConstraints.NONE;
+                        _cc0.anchor = GridBagConstraints.WEST;
+                        add(new JCheckBox() { {
+                            setText("- включить контент в бэкап");
+                            ch_include_content.put(this);
+                            setSelected(true);
+                            addChangeListener((e) -> { 
+                                boolean en = ch_include_content.get().isSelected();
+                                lb_include_content.get().setEnabled(en);
+                                tf_content_path.get().setEnabled(en);
+                                bt_include_content.get().setEnabled(en);
+                            });
+                        } }, _cc0);
+
+                        _cc0.gridx = 0;
+                        _cc0.gridy = 1;
+                        _cc0.weightx = 100;
+                        _cc0.weighty = 0;
+                        _cc0.gridwidth = 1;
+                        _cc0.gridheight = 1;
+                        _cc0.insets = _is1;
+                        _cc0.fill = GridBagConstraints.NONE;
+                        _cc0.anchor = GridBagConstraints.EAST;
+                        add(new JLabel() { {
+                            setText("Путь к контенту:");
+                            lb_include_content.put(this);
+                        } }, _cc0);
+
+                        _cc0.gridx = 1;
+                        _cc0.gridy = 1;
+                        _cc0.weightx = 0;
+                        _cc0.weighty = 0;
+                        _cc0.gridwidth = 1;
+                        _cc0.gridheight = 1;
+                        _cc0.insets = _is1;
+                        _cc0.fill = GridBagConstraints.NONE;
+                        _cc0.anchor = GridBagConstraints.WEST;
+                        add(new JTextField() { {
+                            setColumns(25);
+                            setText(PackageLocation.thisPackagePath + "content" + File.separator);
+                            tf_content_path.put(this);
+                        } }, _cc0);
+
+                        _cc0.gridx = 2;
+                        _cc0.gridy = 1;
+                        _cc0.weightx = 0;
+                        _cc0.weighty = 0;
+                        _cc0.gridwidth = 1;
+                        _cc0.gridheight = 1;
+                        _cc0.insets = _is1;
+                        _cc0.fill = GridBagConstraints.NONE;
+                        _cc0.anchor = GridBagConstraints.CENTER;
+                        add(new JButton() { {
+                            setText("...");
+                            bt_include_content.put(this);
+                            addActionListener((e) -> {
+                                File f = new File(tf_content_path.get().getText());
+                                JFileChooser fod = new JFileChooser();
+                                fod.setDialogType(JFileChooser.OPEN_DIALOG);
+                                fod.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                                if(f.exists()) {
+                                    fod.setSelectedFile(f);
                                 }
-                                tf_content_path.get().setText(dir);
-                            }
-                        });
-                    } }, _cc0);
+                                else {
+                                    fod.setCurrentDirectory(new File(f.getAbsolutePath().substring(0, f.getAbsolutePath().lastIndexOf(File.separator))));
+                                }
+                                fod.setDialogTitle("Указать расположение контента");
+                                int ret = fod.showDialog(thisFrame.get(), "Открыть..");
+                                if(ret == JFileChooser.APPROVE_OPTION) {
+                                    String dir = fod.getSelectedFile().getAbsolutePath();
+                                    if((dir.length() > 0) && 
+                                            (dir.charAt(dir.length() - 1) != '\\')) { 
+                                        dir += "\\"; 
+                                    }
+                                    tf_content_path.get().setText(dir);
+                                }
+                            });
+                        } }, _cc0);
+                    } }, BorderLayout.CENTER);
                 } }, BorderLayout.CENTER);
             } }, _cc);
             
@@ -380,7 +413,7 @@ public class BackupFrame extends JFrame {
             _cc.anchor = GridBagConstraints.EAST;
             add(new JPanel() { {
                 setLayout(new BorderLayout());
-                setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                //setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
                 add(new JPanel() { {
                     setLayout(new GridBagLayout());
                     
@@ -388,7 +421,7 @@ public class BackupFrame extends JFrame {
                     
                     _cc0.gridx = 0;
                     _cc0.gridy = 0;
-                    _cc0.weightx = 0;
+                    _cc0.weightx = 100;
                     _cc0.weighty = 0;
                     _cc0.gridwidth = 1;
                     _cc0.gridheight = 1;
@@ -465,7 +498,8 @@ public class BackupFrame extends JFrame {
                             _backupPath = tf_backup_path.get().getText(),
                             _contentPath = tf_content_path.get().getText();
                     Boolean _sUsers = ch_users.get().isSelected(),
-                            _sResults = ch_results.get().isSelected();
+                            _sResults = ch_results.get().isSelected(),
+                            _sInclContent = ch_include_content.get().isSelected();
                     TaskQueue.instance().addNewTask(() -> {
                         LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Подключение к БД...");
                         try {
@@ -474,7 +508,7 @@ public class BackupFrame extends JFrame {
                                     _dbLogin, 
                                     _dbPass)) {
                                 cb.setInformation("Подключение к БД... успешно");
-                                Backup.storeBackup(conn, _sUsers, _sResults, _backupPath, _contentPath, cb);
+                                Backup.storeBackup(conn, _sUsers, _sResults, _sInclContent, _backupPath, _contentPath, cb);
                             }
                         } catch (Exception ex) {
                             cb.setInformation(ex.toString(), Color.RED);

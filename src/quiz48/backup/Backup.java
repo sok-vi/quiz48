@@ -445,11 +445,14 @@ public final class Backup {
             /*вопросы обязательно*/
             boolean user, 
             boolean result,
+            boolean content,
             String backupPath,
             String contentPath,
             LoadingWindow.Callback cb) throws FileNotFoundException, IOException, SQLException {
         
-        boolean exContent = (new File(PackageLocation.thisPackagePath + "content\\")).exists();
+        if(!(new File(contentPath)).exists()) {
+            throw new IOException(String.format("Отсутствует папка с контентом %1$s", contentPath));
+        }
         
         File bf = new File(backupPath);
         if(!bf.exists()) { 
@@ -473,7 +476,7 @@ public final class Backup {
                         STORE_QUIZ | 
                                 (user ? STORE_USERS : 0) |
                                 (result ? STORE_RESULTS : 0) |
-                                (exContent ? STORE_CONTENT : 0));
+                                (content ? STORE_CONTENT : 0));
                 
                 StoreBlockInfo info = new StoreBlockInfo();
                 info.tmpFile = new File(String.format("%1$s.%2$d.tmp", backupPath, (int)System.currentTimeMillis()));
@@ -526,24 +529,27 @@ public final class Backup {
                     throw new IOException(String.format("Не удалось удалить временный файл %1$s", info.tmpFile.getAbsolutePath()));
                 }
                 
-                if(!info.tmpFile.createNewFile()) {
-                    throw new IOException(String.format("Не удалось создать временный файл %1$s", info.tmpFile.getAbsolutePath()));
-                }
+                if(content) {
                 
-                //сохраняем конент
-                try(FileOutputStream tmpfs = new FileOutputStream(info.tmpFile)) {
-                    try(DataOutputStream tmpdto = new DataOutputStream(tmpfs)) {
-                        storeContent(new File(contentPath), tmpfs, tmpdto);
+                    if(!info.tmpFile.createNewFile()) {
+                        throw new IOException(String.format("Не удалось создать временный файл %1$s", info.tmpFile.getAbsolutePath()));
                     }
-                }
 
-                info.length = (int)info.tmpFile.length();
-                info.type = TYPE_CONTENT;
-                storeBlockInfo(info, dto);//запись информации о блоке
-                copyTmpFile(fs, info.tmpFile);//копируем узеров
+                    //сохраняем конент
+                    try(FileOutputStream tmpfs = new FileOutputStream(info.tmpFile)) {
+                        try(DataOutputStream tmpdto = new DataOutputStream(tmpfs)) {
+                            storeContent(new File(contentPath), tmpfs, tmpdto);
+                        }
+                    }
 
-                if(!info.tmpFile.delete()) {
-                    throw new IOException(String.format("Не удалось удалить временный файл %1$s", info.tmpFile.getAbsolutePath()));
+                    info.length = (int)info.tmpFile.length();
+                    info.type = TYPE_CONTENT;
+                    storeBlockInfo(info, dto);//запись информации о блоке
+                    copyTmpFile(fs, info.tmpFile);//копируем узеров
+
+                    if(!info.tmpFile.delete()) {
+                        throw new IOException(String.format("Не удалось удалить временный файл %1$s", info.tmpFile.getAbsolutePath()));
+                    }
                 }
             }
         }
