@@ -46,6 +46,12 @@ public final class ConnectDB implements AutoCloseable {
                 "jdbc:derby:" + AppProperties.DBPath, 
                 AppProperties.DBLogin, AppProperties.DBPassword);
         
+        if(m_Derby != null) {
+            try(Statement s = m_Derby.createStatement()) {
+                s.execute(String.format("SET CURRENT SCHEMA %1$s", AppProperties.DBLogin));
+            }
+        }
+        
         return (m_Derby != null);
     }
     

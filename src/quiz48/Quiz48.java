@@ -13,6 +13,7 @@ import javax.swing.JFrame;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import quiz48.backup.Backup;
 import quiz48.backup.BackupFrame;
 import quiz48.backup.RestoreFrame;
 import quiz48.gui.LoadingWindow;

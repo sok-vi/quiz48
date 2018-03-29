@@ -11,9 +11,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import quiz48.PackageLocation;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import quiz48.AppProperties;
 import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 import quiz48.gui.LoadingWindow;
@@ -552,6 +557,22 @@ public final class Backup {
                     }
                 }
             }
+        }
+    }
+    
+    public static void restore() {
+        try {
+            Connection c = DriverManager.getConnection(
+                    "jdbc:derby:C:\\git\\db\\a\\;create=true;user=vasya;password=65h90jgwc3j890hyg54jhpo453ujhip");
+            Statement createStatement = c.createStatement();
+            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.defaultConnectionMode','noAccess')");
+            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.fullAccessUsers','vasya')");
+            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.user.vasya','65h90jgwc3j890hyg54jhpo453ujhip')");
+            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.connection.requireAuthentication','true')");
+            createStatement.execute("CREATE SCHEMA vasya AUTHORIZATION vasya");
+            createStatement.execute("SET CURRENT SCHEMA vasya");
+        } catch (SQLException ex) {
+            Logger.getLogger(Backup.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
