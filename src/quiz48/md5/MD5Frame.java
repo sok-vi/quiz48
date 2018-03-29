@@ -10,6 +10,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import quiz48.Pointer;
 import quiz48.WindowLocation;
+import quiz48.gui.AppIcons;
 
 /**
  *
@@ -91,6 +92,7 @@ public class MD5Frame extends JFrame {
             setLayout(new FlowLayout(FlowLayout.RIGHT));
 
             JButton _btn = new JButton("Calculate");
+            _btn.setIcon(AppIcons.instance().get("runprog.png"));
             Color _textFieldBackground = textPwd.get().getBackground();
             _btn.addActionListener((ActionEvent e) -> {
                 String _pwd = textPwd.get().getText();

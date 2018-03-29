@@ -29,6 +29,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import quiz48.AppProperties;
 import quiz48.PackageLocation;
+import quiz48.Pointer;
 import quiz48.WindowLocation;
 import quiz48.gui.AppIcons;
 
@@ -47,6 +48,54 @@ public class RestoreFrame extends JFrame {
         Insets _is1 = new Insets(0, 0, 5, 5),
                 is2 = _cc.insets;
         
+        Pointer<JRadioButton> db_rb_default = new Pointer<>(),
+                db_rb_exist = new Pointer<>(),
+                db_rb_new = new Pointer<>();
+        Pointer<JLabel> db_lb_path = new Pointer<>(),
+                db_lb_user = new Pointer<>(),
+                db_lb_pwd = new Pointer<>(),
+                db_lb_pwd_conf = new Pointer<>();
+        Pointer<JTextField> db_tf_path = new Pointer<>(),
+                db_tf_user = new Pointer<>();
+        Pointer<JPasswordField> db_pf_pwd = new Pointer<>(),
+                db_pf_pwd_conf =  new Pointer<>();
+        Pointer<JButton> db_bt_path = new Pointer<>();
+        Runnable db_upd_fields = () -> {
+            if(db_rb_default.get().isSelected()) {
+                db_lb_path.get().setEnabled(false);
+                db_tf_path.get().setEnabled(false);
+                db_bt_path.get().setEnabled(false);
+                db_lb_user.get().setEnabled(false);
+                db_tf_user.get().setEnabled(false);
+                db_lb_pwd.get().setEnabled(false);
+                db_pf_pwd.get().setEnabled(false);
+                db_lb_pwd_conf.get().setEnabled(false);
+                db_pf_pwd_conf.get().setEnabled(false);
+            }
+            else if(db_rb_exist.get().isSelected()) {
+                db_lb_path.get().setEnabled(true);
+                db_tf_path.get().setEnabled(true);
+                db_bt_path.get().setEnabled(true);
+                db_lb_user.get().setEnabled(true);
+                db_tf_user.get().setEnabled(true);
+                db_lb_pwd.get().setEnabled(true);
+                db_pf_pwd.get().setEnabled(true);
+                db_lb_pwd_conf.get().setEnabled(false);
+                db_pf_pwd_conf.get().setEnabled(false);
+            }
+            else if(db_rb_new.get().isSelected()) {
+                db_lb_path.get().setEnabled(true);
+                db_tf_path.get().setEnabled(true);
+                db_bt_path.get().setEnabled(true);
+                db_lb_user.get().setEnabled(true);
+                db_tf_user.get().setEnabled(true);
+                db_lb_pwd.get().setEnabled(true);
+                db_pf_pwd.get().setEnabled(true);
+                db_lb_pwd_conf.get().setEnabled(true);
+                db_pf_pwd_conf.get().setEnabled(true);
+            }
+        };
+        
         add(new JPanel() { {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -63,19 +112,25 @@ public class RestoreFrame extends JFrame {
                             setText("- по умолчанию");
                             setSelected(true);
                             g1.add(this);
+                            db_rb_default.put(this);
                             setAlignmentX(Component.LEFT_ALIGNMENT);
+                            addChangeListener((e) -> { db_upd_fields.run(); });
                         } });
                         add(Box.createVerticalStrut(5));
                         add(new JRadioButton() { {
                             setText("- использовать существующую");
                             g1.add(this);
+                            db_rb_exist.put(this);
                             setAlignmentX(Component.LEFT_ALIGNMENT);
+                            addChangeListener((e) -> { db_upd_fields.run(); });
                         } });
                         add(Box.createVerticalStrut(5));
                         add(new JRadioButton() { {
                             setText("- создать новую");
                             g1.add(this);
+                            db_rb_new.put(this);
                             setAlignmentX(Component.LEFT_ALIGNMENT);
+                            addChangeListener((e) -> { db_upd_fields.run(); });
                         } });
                         add(Box.createVerticalStrut(10));
                     } });
@@ -98,6 +153,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.anchor = GridBagConstraints.EAST;
                             add(new JLabel() { {
                                 setText("Путь к базе данных:");
+                                db_lb_path.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 1;
@@ -112,6 +168,7 @@ public class RestoreFrame extends JFrame {
                             add(new JTextField() { {
                                 setColumns(25);
                                 setText(AppProperties.DBPath);
+                                db_tf_path.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 2;
@@ -125,6 +182,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.anchor = GridBagConstraints.CENTER;
                             add(new JButton() { {
                                 setText("...");
+                                db_bt_path.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 0;
@@ -138,6 +196,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.anchor = GridBagConstraints.EAST;
                             add(new JLabel() { {
                                 setText("Пользователь:");
+                                db_lb_user.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 1;
@@ -152,6 +211,7 @@ public class RestoreFrame extends JFrame {
                             add(new JTextField() { {
                                 setColumns(25);
                                 setText(AppProperties.DBLogin);
+                                db_tf_user.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 0;
@@ -165,6 +225,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.anchor = GridBagConstraints.EAST;
                             add(new JLabel() { {
                                 setText("Пароль:");
+                                db_lb_pwd.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 1;
@@ -179,6 +240,7 @@ public class RestoreFrame extends JFrame {
                             add(new JPasswordField() { {
                                 setColumns(25);
                                 setText(AppProperties.DBPassword);
+                                db_pf_pwd.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 0;
@@ -192,6 +254,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.anchor = GridBagConstraints.EAST;
                             add(new JLabel() { {
                                 setText("Повторить пароль:");
+                                db_lb_pwd_conf.put(this);
                             } }, _cc0);
 
                             _cc0.gridx = 1;
@@ -206,6 +269,7 @@ public class RestoreFrame extends JFrame {
                             add(new JPasswordField() { {
                                 setColumns(25);
                                 setText(AppProperties.DBPassword);
+                                db_pf_pwd_conf.put(this);
                             } }, _cc0);
                         } }, BorderLayout.CENTER);
                     } });
@@ -235,7 +299,6 @@ public class RestoreFrame extends JFrame {
                         ButtonGroup g1 = new ButtonGroup();
                         add(new JRadioButton() { {
                             g1.add(this);
-                            setSelected(true);
                             setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
                             setText("- удалить существующие записи");
                         } });
@@ -246,8 +309,9 @@ public class RestoreFrame extends JFrame {
                         } });
                         add(new JRadioButton() { {
                             g1.add(this);
+                            setSelected(true);
                             setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-                            setText("- не удалять и если существуют игнорировать");
+                            setText("- не удалять и если существуют пропускать");
                         } });
 
                         add(Box.createVerticalStrut(5));
@@ -255,19 +319,16 @@ public class RestoreFrame extends JFrame {
                             setText("- результаты, если есть");
                             setSelected(true);
                         } });
-                        ButtonGroup g2 = new ButtonGroup();
                         add(Box.createVerticalStrut(5));
-                        add(new JRadioButton() { {
+                        add(new JCheckBox() { {
                             setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
                             setSelected(true);
-                            setText("- пропускать записи, которые ну удаётся привязать к пользователям");
-                            g2.add(this);
+                            setText("- пропускать записи, которые не удаётся привязать к пользователям");
                         } });
                         add(Box.createVerticalStrut(5));
-                        add(new JRadioButton() { {
+                        add(new JCheckBox() { {
                             setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
                             setText("- удалить существующие");
-                            g2.add(this);
                         } });
 
                         add(Box.createVerticalStrut(5));
@@ -295,7 +356,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.fill = GridBagConstraints.NONE;
                             _cc0.anchor = GridBagConstraints.WEST;
                             add(new JCheckBox() { {
-                                setText("- загрузить контент из бэкапа, если есть");
+                                setText("- развернуть контент из бэкапа, если есть");
                                 setSelected(true);
                                 addChangeListener((e) -> { 
 
@@ -389,6 +450,8 @@ public class RestoreFrame extends JFrame {
                 addActionListener((e) -> { System.exit(0); });
             } });
         } }, BorderLayout.SOUTH);
+        
+        db_upd_fields.run();
         
         pack();
         
