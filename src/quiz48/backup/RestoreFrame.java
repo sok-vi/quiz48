@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -33,7 +31,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import quiz48.AppProperties;
 import quiz48.PackageLocation;
@@ -88,7 +85,8 @@ public class RestoreFrame extends JFrame {
                 lo_ch_user = new Pointer<>(),
                 lo_ch_results = new Pointer<>(),
                 lo_ch_results_skip = new Pointer<>(),
-                lo_ch_results_del = new Pointer<>();
+                lo_ch_results_del = new Pointer<>(),
+                us_ch_set_setting = new Pointer<>();
         Pointer<Color> tf_background_color = new Pointer<>();
         
         Runnable db_upd_fields = () -> {
@@ -642,6 +640,14 @@ public class RestoreFrame extends JFrame {
                 } });
             } });
             
+            add(new JPanel() { {
+                setLayout(new FlowLayout(FlowLayout.RIGHT));
+                add(new JCheckBox() { {
+                    setText("- сохранить указанные параметры в кофигурации приложения");
+                    setSelected(true);
+                    us_ch_set_setting.put(this);
+                } });
+            } });
         } }, BorderLayout.CENTER);
         
         add(new JPanel() { {
@@ -658,7 +664,14 @@ public class RestoreFrame extends JFrame {
                                                 File.separator) : 
                                         db_tf_path.get().getText(),
                             _dblogin = db_tf_user.get().getText(),
-                            _dbpwd = new String(db_pf_pwd.get().getPassword());
+                            _dbpwd = new String(db_pf_pwd.get().getPassword()),
+                            _bk_path = bk_tf_path.get().getText();
+                    Boolean _user_loading = lo_ch_user.get().isSelected();
+                    Backup.OptUser uopt = lo_rb_users_del.get().isSelected() ? 
+                                                Backup.OptUser.delete : 
+                                                (lo_rb_users_nodel.get().isSelected() ? 
+                                                            Backup.OptUser.no_delete : 
+                                                            Backup.OptUser.no_delete_skip);
                     
                     Pointer<Backup.OptDB> opt = new Pointer<>(Backup.OptDB.defaultDB);
                     if(db_rb_exist.get().isSelected()) {
@@ -686,7 +699,7 @@ public class RestoreFrame extends JFrame {
                     TaskQueue.instance().addNewTask(() -> {
                         LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Восстановление базы данных из бэкапа...");
                         try {
-                            Backup.restore(opt.get(), _dbpath, _dblogin, _dbpwd);
+                            Backup.restore(opt.get(), _dbpath, _dblogin, _dbpwd, _bk_path, _user_loading, uopt);
                         } catch (IOException|SQLException ex) {
                             LoadingWindow.sleep(3);
                             cb.setInformation(ex.toString(), Color.RED);

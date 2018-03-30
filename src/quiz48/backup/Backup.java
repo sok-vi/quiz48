@@ -6,6 +6,7 @@
 package quiz48.backup;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -565,6 +566,61 @@ public final class Backup {
         }
     }
     
+    private static BlockTitle loadBlockInfo(DataInputStream dti) throws IOException {
+        BlockTitle bt = new BlockTitle();
+        
+        bt.type = dti.readByte();
+        bt.length = dti.readInt();
+        bt.count = dti.readInt();
+        
+        return bt;
+    }
+    
+    private static void loadUsers(ConnectDB conn, DataInputStream dti, OptUser user, BlockTitle bt) throws SQLException, IOException {
+        if(user == OptUser.delete) {
+            conn.executeQuery((s) -> { s.execute(); }, "DELETE FROM users");
+        }
+        
+        Pointer<Boolean> exist = new Pointer<>(false);
+        
+        for(int i = 0; i < bt.count; ++i) {
+            String _login = dti.readUTF(),
+                    _name = dti.readUTF(),
+                    _pwd = dti.readUTF();
+            Integer _is_admin = dti.readInt();
+            
+            if(user != OptUser.delete) {
+                conn.executeQuery((s) -> {
+                    s.setString(1, _login);
+                    ResultSet rs = s.executeQuery();
+                    if(rs.next()) {
+                        exist.put(rs.getInt("CNT") > 0);
+                    }
+                    else {
+                        throw  new SQLException("users fail");
+                    }
+                }, "SELECT COUNT(*) AS CNT FROM users WHERE login=?");
+            }
+            
+            if(exist.get()) {
+                if(user == OptUser.no_delete) {
+                    throw new SQLException("fail user exists");
+                }
+                else {
+                    continue;
+                }
+            }
+            
+            conn.executeQuery((s) -> {
+                s.setString(1, _login);
+                s.setString(2, _name);
+                s.setString(3, _pwd);
+                s.setInt(4, _is_admin);
+                s.executeUpdate();
+            }, "INSERT INTO users (login, name, pwd, is_admin) VALUES (?, ?, ?, ?)");
+        }
+    }
+    
     private static ConnectDB createNewDB(
             String db_path,
             String db_login,
@@ -666,12 +722,18 @@ public final class Backup {
     }
     
     public enum OptDB { defaultDB, setPathDB, newDB }
+    public enum OptUser { delete, no_delete, no_delete_skip }
     
     public static void restore(
             OptDB db,
             String db_path,
             String db_login,
-            String db_pwd
+            String db_pwd,
+            /*путь к бэкапу*/
+            String backupPath,
+            /*user*/
+            boolean user_loading,
+            OptUser user
             ) throws FileNotFoundException, IOException, SQLException {
         
         ConnectDB newConn = null;
@@ -683,6 +745,34 @@ public final class Backup {
             case newDB:
                 newConn = createNewDB(db_path, db_login, db_pwd);
                 break;
+        }
+        
+        try {
+            
+            File bf = new File(backupPath);
+            if(!bf.exists()) {
+                throw new IOException(String.format("Не найден файл бэкапа %1$s", bf.getAbsolutePath()));
+            }
+            
+            try(FileInputStream fs = new FileInputStream(bf)) {
+                try(DataInputStream dti = new DataInputStream(fs)) {
+                    byte gflags = dti.readByte();
+                    
+                    //читаем узеров если есть и надо
+                    if((gflags & STORE_USERS) == STORE_USERS) {
+                        BlockTitle bt = loadBlockInfo(dti);
+                        if(user_loading) {
+                            
+                        }
+                        else {
+                            fs.skip(bt.length);
+                        }
+                    }
+                }
+            }
+        }
+        finally {
+            newConn.close();
         }
     }
 }
