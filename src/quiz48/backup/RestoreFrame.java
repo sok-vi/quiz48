@@ -698,13 +698,13 @@ public class RestoreFrame extends JFrame {
                     
                     TaskQueue.instance().addNewTask(() -> {
                         LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Восстановление базы данных из бэкапа...");
-                        try {
+                      /*  try {
                             Backup.restore(opt.get(), _dbpath, _dblogin, _dbpwd, _bk_path, _user_loading, uopt);
                         } catch (IOException|SQLException ex) {
                             LoadingWindow.sleep(3);
                             cb.setInformation(ex.toString(), Color.RED);
                             ex.printStackTrace();
-                        }
+                        }*/
                         cb.setInformation(String.format("Данные восстановлены из бэкапа"));
                         LoadingWindow.sleep(2);
                         cb.exit();

@@ -575,7 +575,14 @@ public final class Backup {
         
         return bt;
     }
-    
+    /*                        dto.writeUTF(rs.getString("name"));
+                        dto.writeInt(rs.getInt("is_fix"));
+                        dto.writeInt(rs.getInt("count"));
+                        dto.writeInt(rs.getInt("time"));
+                        dto.writeInt(rs.getInt("sort"));
+                        dto.writeInt(rs.getInt("level"));
+                        dto.writeInt(rs.getInt("repeat"));
+*/
     private static void loadUsers(ConnectDB conn, DataInputStream dti, OptUser user, BlockTitle bt) throws SQLException, IOException {
         if(user == OptUser.delete) {
             conn.executeQuery((s) -> { s.execute(); }, "DELETE FROM users");
@@ -733,7 +740,14 @@ public final class Backup {
             String backupPath,
             /*user*/
             boolean user_loading,
-            OptUser user
+            OptUser user,
+            /*quiz*/
+            boolean quiz,
+            boolean delete_quiz,
+            /*results*/
+            boolean results,
+            boolean delete_results,
+            boolean skip_results_not_found_users
             ) throws FileNotFoundException, IOException, SQLException {
         
         ConnectDB newConn = null;
@@ -761,12 +775,19 @@ public final class Backup {
                     //читаем узеров если есть и надо
                     if((gflags & STORE_USERS) == STORE_USERS) {
                         BlockTitle bt = loadBlockInfo(dti);
+                        if(bt.type != TYPE_USER) { throw new IOException("fail content type"); }
                         if(user_loading) {
-                            
+                            loadUsers(newConn, dti, user, bt);
                         }
                         else {
                             fs.skip(bt.length);
                         }
+                    }
+                    
+                    //читаем викторины
+                    if((gflags & STORE_QUIZ) == STORE_CONTENT) {
+                        BlockTitle bt = loadBlockInfo(dti);
+                        if(bt.type != TYPE_QUIZ) { throw new IOException("fail content type"); }
                     }
                 }
             }
