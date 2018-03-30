@@ -14,6 +14,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -30,12 +33,15 @@ import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import quiz48.AppProperties;
 import quiz48.PackageLocation;
 import quiz48.Pointer;
+import quiz48.TaskQueue;
 import quiz48.WindowLocation;
 import quiz48.gui.AppIcons;
+import quiz48.gui.LoadingWindow;
 
 /**
  *
@@ -66,11 +72,13 @@ public class RestoreFrame extends JFrame {
                 db_lb_user = new Pointer<>(),
                 db_lb_pwd = new Pointer<>(),
                 db_lb_pwd_conf = new Pointer<>(),
-                cn_lb_path = new Pointer<>();
+                cn_lb_path = new Pointer<>(),
+                db_lb_dbname = new Pointer<>();
         Pointer<JTextField> db_tf_path = new Pointer<>(),
                 db_tf_user = new Pointer<>(),
                 cn_tf_path = new Pointer<>(),
-                bk_tf_path = new Pointer<>();
+                bk_tf_path = new Pointer<>(),
+                db_tf_dbname = new Pointer<>();
         Pointer<JPasswordField> db_pf_pwd = new Pointer<>(),
                 db_pf_pwd_conf =  new Pointer<>();
         Pointer<JButton> db_bt_path = new Pointer<>(),
@@ -81,6 +89,7 @@ public class RestoreFrame extends JFrame {
                 lo_ch_results = new Pointer<>(),
                 lo_ch_results_skip = new Pointer<>(),
                 lo_ch_results_del = new Pointer<>();
+        Pointer<Color> tf_background_color = new Pointer<>();
         
         Runnable db_upd_fields = () -> {
             if(db_rb_default.get().isSelected()) {
@@ -93,6 +102,8 @@ public class RestoreFrame extends JFrame {
                 db_pf_pwd.get().setEnabled(false);
                 db_lb_pwd_conf.get().setEnabled(false);
                 db_pf_pwd_conf.get().setEnabled(false);
+                db_lb_dbname.get().setEnabled(false);
+                db_tf_dbname.get().setEnabled(false);
             }
             else if(db_rb_exist.get().isSelected()) {
                 db_lb_path.get().setEnabled(true);
@@ -104,6 +115,8 @@ public class RestoreFrame extends JFrame {
                 db_pf_pwd.get().setEnabled(true);
                 db_lb_pwd_conf.get().setEnabled(false);
                 db_pf_pwd_conf.get().setEnabled(false);
+                db_lb_dbname.get().setEnabled(false);
+                db_tf_dbname.get().setEnabled(false);
             }
             else if(db_rb_new.get().isSelected()) {
                 db_lb_path.get().setEnabled(true);
@@ -115,6 +128,8 @@ public class RestoreFrame extends JFrame {
                 db_pf_pwd.get().setEnabled(true);
                 db_lb_pwd_conf.get().setEnabled(true);
                 db_pf_pwd_conf.get().setEnabled(true);
+                db_lb_dbname.get().setEnabled(true);
+                db_tf_dbname.get().setEnabled(true);
             }
             
             lo_ch_tests_del.get().setEnabled(
@@ -213,6 +228,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.fill = GridBagConstraints.NONE;
                             _cc0.anchor = GridBagConstraints.WEST;
                             add(new JTextField() { {
+                                tf_background_color.put(getBackground());
                                 setColumns(25);
                                 setText(AppProperties.DBPath);
                                 db_tf_path.put(this);
@@ -339,6 +355,35 @@ public class RestoreFrame extends JFrame {
                                 setColumns(25);
                                 setText(AppProperties.DBPassword);
                                 db_pf_pwd_conf.put(this);
+                            } }, _cc0);
+
+                            _cc0.gridx = 0;
+                            _cc0.gridy = 4;
+                            _cc0.weightx = 100;
+                            _cc0.weighty = 0;
+                            _cc0.gridwidth = 1;
+                            _cc0.gridheight = 1;
+                            _cc0.insets = _is1;
+                            _cc0.fill = GridBagConstraints.NONE;
+                            _cc0.anchor = GridBagConstraints.EAST;
+                            add(new JLabel() { {
+                                setText("Имя новой базы дынных:");
+                                db_lb_dbname.put(this);
+                            } }, _cc0);
+
+                            _cc0.gridx = 1;
+                            _cc0.gridy = 4;
+                            _cc0.weightx = 0;
+                            _cc0.weighty = 0;
+                            _cc0.gridwidth = 1;
+                            _cc0.gridheight = 1;
+                            _cc0.insets = _is1;
+                            _cc0.fill = GridBagConstraints.NONE;
+                            _cc0.anchor = GridBagConstraints.WEST;
+                            add(new JTextField() { {
+                                setColumns(25);
+                                setText("newdb" + (new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")).format(new Date()));
+                                db_tf_dbname.put(this);
                             } }, _cc0);
                         } }, BorderLayout.CENTER);
                     } });
@@ -605,11 +650,52 @@ public class RestoreFrame extends JFrame {
                 setIcon(AppIcons.instance().get("runprog.png"));
                 setText("Запустить восстановление из резервной копии...");
                 addActionListener((e) -> {
-                    try {
-                        Backup.restore();
-                    } catch (IOException ex) {
-                        Logger.getLogger(RestoreFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    String _dbpath = db_rb_new.get().isSelected() ? 
+                                        String.format(
+                                                "%1$s%2$s%3$s", 
+                                                db_tf_path.get().getText(), 
+                                                db_tf_dbname.get().getText(), 
+                                                File.separator) : 
+                                        db_tf_path.get().getText(),
+                            _dblogin = db_tf_user.get().getText(),
+                            _dbpwd = new String(db_pf_pwd.get().getPassword());
+                    
+                    Pointer<Backup.OptDB> opt = new Pointer<>(Backup.OptDB.defaultDB);
+                    if(db_rb_exist.get().isSelected()) {
+                        opt.put(Backup.OptDB.setPathDB);
                     }
+                    else if(db_rb_new.get().isSelected()) {
+                        if(_dbpwd.compareTo(new String(db_pf_pwd_conf.get().getPassword())) == 0) {
+                            db_pf_pwd_conf.get().setBackground(tf_background_color.get());
+                            opt.put(Backup.OptDB.newDB);
+                        }
+                        else {
+                            db_pf_pwd_conf.get().setBackground(Color.red);
+                            return;
+                        }
+                        
+                        if(db_tf_dbname.get().getText().length() == 0) {
+                            db_tf_dbname.get().setBackground(Color.red);
+                            return;
+                        }
+                        else {
+                            db_tf_dbname.get().setBackground(tf_background_color.get());
+                        }
+                    }
+                    
+                    TaskQueue.instance().addNewTask(() -> {
+                        LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Восстановление базы данных из бэкапа...");
+                        try {
+                            Backup.restore(opt.get(), _dbpath, _dblogin, _dbpwd);
+                        } catch (IOException|SQLException ex) {
+                            LoadingWindow.sleep(3);
+                            cb.setInformation(ex.toString(), Color.RED);
+                            ex.printStackTrace();
+                        }
+                        cb.setInformation(String.format("Данные восстановлены из бэкапа"));
+                        LoadingWindow.sleep(2);
+                        cb.exit();
+                    });
                 });
             } });
             add(new JButton() { {

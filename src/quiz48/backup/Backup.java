@@ -565,82 +565,124 @@ public final class Backup {
         }
     }
     
-    private static void createNewDB() throws FileNotFoundException, IOException {
-        try(InputStream fs = Backup.class.getResourceAsStream(String.format("db%1$sdb.sql", File.separator))) {
-            try(InputStreamReader isr = new InputStreamReader(fs)) {
-                try(BufferedReader reader = new BufferedReader(isr)) {
-                    String line;
-                    StringBuilder sb = new StringBuilder();
-                    boolean open_block_comment = false;
-                    while((line = reader.readLine()) != null) {
-                        String buff = "";
-                        while(true) {
-                            if(open_block_comment) {
-                                //нашли начало блочного комментария
-                                //ищем конец
-                                int pos = line.indexOf("*/");
-                                if(pos != -1) {
-                                    line = line.substring(pos + 2);
-                                    open_block_comment = false;
-                                }
-                                else {
-                                    line = "";
-                                    break;
-                                }
-                            }
-                            else {
-                                //ищем начало блочного комментария
-                                int pos = line.indexOf("/*");
-                                if(pos != -1) {
-                                    open_block_comment = true;
-                                    if(pos > 0) {
-                                        buff += line.substring(0, pos);
+    private static ConnectDB createNewDB(
+            String db_path,
+            String db_login,
+            String db_pwd
+    ) throws FileNotFoundException, IOException, SQLException {
+        
+        ConnectDB newDB = ConnectDB.connect(db_path + ";create=true", db_login, db_pwd);
+        
+        try {
+            newDB.executeQuery((s) -> {
+                s.execute();
+            }, "CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.defaultConnectionMode','noAccess')");
+            newDB.executeQuery((s) -> {
+                s.setString(1, db_login);
+                s.execute();
+            }, "CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.fullAccessUsers',?)");
+            newDB.executeQuery((s) -> {
+                s.setString(1, "derby.user." + db_login);
+                s.setString(2, db_pwd);
+                s.execute();
+            }, "CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY(?,?)");
+            newDB.executeQuery((s) -> {
+                s.execute();
+            }, "CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.connection.requireAuthentication','true')");
+            newDB.executeQuery((s) -> {
+                s.execute();
+            }, String.format("CREATE SCHEMA %1$s AUTHORIZATION %1$s", db_login));
+            newDB.executeQuery((s) -> {
+                s.execute();
+            }, String.format("SET CURRENT SCHEMA %1$s", db_login));
+            
+            try(InputStream fs = Backup.class.getResourceAsStream(String.format("db%1$sdb.sql", File.separator))) {
+                try(InputStreamReader isr = new InputStreamReader(fs)) {
+                    try(BufferedReader reader = new BufferedReader(isr)) {
+                        String line;
+                        StringBuilder sb = new StringBuilder();
+                        boolean open_block_comment = false;
+                        while((line = reader.readLine()) != null) {
+                            String buff = "";
+                            while(true) {
+                                if(open_block_comment) {
+                                    //нашли начало блочного комментария
+                                    //ищем конец
+                                    int pos = line.indexOf("*/");
+                                    if(pos != -1) {
+                                        line = line.substring(pos + 2);
+                                        open_block_comment = false;
                                     }
-                                    line = line.substring(pos + 2);
+                                    else {
+                                        line = "";
+                                        break;
+                                    }
                                 }
                                 else {
-                                    break;
+                                    //ищем начало блочного комментария
+                                    int pos = line.indexOf("/*");
+                                    if(pos != -1) {
+                                        open_block_comment = true;
+                                        if(pos > 0) {
+                                            buff += line.substring(0, pos);
+                                        }
+                                        line = line.substring(pos + 2);
+                                    }
+                                    else {
+                                        break;
+                                    }
                                 }
                             }
+
+                            line = buff + line;
+
+                            int pos = line.indexOf("--");
+                            if(pos != -1) {
+                                line = line.substring(0, pos) + "\n";
+                            }
+
+                            line = line.replaceAll("\\t+", " ");
+                            line = line.replaceAll("\\s+", " ");
+                            line = (line.compareTo(" ") == 0 ? "" : line);
+
+                            if(line.length() > 0) { sb.append(line); }
                         }
-                        
-                        line = buff + line;
-                        
-                        int pos = line.indexOf("--");
-                        if(pos != -1) {
-                            line = line.substring(0, pos) + "\n";
+
+                        String[] commands = sb.toString().split(";");
+                        for(String sql_cmd : commands) {
+                            newDB.executeQuery((s) -> { s.execute(); }, sql_cmd);
                         }
-                        
-                        line = line.replaceAll("\\t+", " ");
-                        line = line.replaceAll("\\s+", " ");
-                        line = (line.compareTo(" ") == 0 ? "" : line);
-                        
-                        if(line.length() > 0) { sb.append(line); }
                     }
-                    
-                    String[] commands = sb.toString().split(";");
-                    for(String s : commands) { System.out.println(s); }
                 }
             }
         }
+        catch(Exception e) {
+            e.printStackTrace();
+            newDB.close();
+            throw e;
+        }
+        
+        return newDB;
     }
     
     public enum OptDB { defaultDB, setPathDB, newDB }
     
-    public static void restore() throws FileNotFoundException, IOException {
-        createNewDB();
-       /* try {
-            Connection c = DriverManager.getConnection(
-                    "jdbc:derby:C:\\git\\db\\a\\;create=true;user=vasya;password=65h90jgwc3j890hyg54jhpo453ujhip");
-            Statement createStatement = c.createStatement();
-            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.defaultConnectionMode','noAccess')");
-            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.fullAccessUsers','vasya')");
-            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.user.vasya','65h90jgwc3j890hyg54jhpo453ujhip')");
-            createStatement.execute("CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.connection.requireAuthentication','true')");
-            createStatement.execute("CREATE SCHEMA vasya AUTHORIZATION vasya");
-            createStatement.execute("SET CURRENT SCHEMA vasya");
-        } catch (SQLException ex) {
-            Logger.getLogger(Backup.class.getName()).log(Level.SEVERE, null, ex);
-        }*/
+    public static void restore(
+            OptDB db,
+            String db_path,
+            String db_login,
+            String db_pwd
+            ) throws FileNotFoundException, IOException, SQLException {
+        
+        ConnectDB newConn = null;
+        switch(db) {
+            case defaultDB:
+            case setPathDB:
+                newConn = ConnectDB.connect(db_path, db_login, db_pwd);
+                break;
+            case newDB:
+                newConn = createNewDB(db_path, db_login, db_pwd);
+                break;
+        }
     }
 }
