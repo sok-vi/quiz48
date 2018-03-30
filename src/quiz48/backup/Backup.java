@@ -5,12 +5,17 @@
  */
 package quiz48.backup;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -560,8 +565,71 @@ public final class Backup {
         }
     }
     
-    public static void restore() {
-        try {
+    private static void createNewDB() throws FileNotFoundException, IOException {
+        try(InputStream fs = Backup.class.getResourceAsStream(String.format("db%1$sdb.sql", File.separator))) {
+            try(InputStreamReader isr = new InputStreamReader(fs)) {
+                try(BufferedReader reader = new BufferedReader(isr)) {
+                    String line;
+                    StringBuilder sb = new StringBuilder();
+                    boolean open_block_comment = false;
+                    while((line = reader.readLine()) != null) {
+                        String buff = "";
+                        while(true) {
+                            if(open_block_comment) {
+                                //нашли начало блочного комментария
+                                //ищем конец
+                                int pos = line.indexOf("*/");
+                                if(pos != -1) {
+                                    line = line.substring(pos + 2);
+                                    open_block_comment = false;
+                                }
+                                else {
+                                    line = "";
+                                    break;
+                                }
+                            }
+                            else {
+                                //ищем начало блочного комментария
+                                int pos = line.indexOf("/*");
+                                if(pos != -1) {
+                                    open_block_comment = true;
+                                    if(pos > 0) {
+                                        buff += line.substring(0, pos);
+                                    }
+                                    line = line.substring(pos + 2);
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        line = buff + line;
+                        
+                        int pos = line.indexOf("--");
+                        if(pos != -1) {
+                            line = line.substring(0, pos) + "\n";
+                        }
+                        
+                        line = line.replaceAll("\\t+", " ");
+                        line = line.replaceAll("\\s+", " ");
+                        line = (line.compareTo(" ") == 0 ? "" : line);
+                        
+                        if(line.length() > 0) { sb.append(line); }
+                    }
+                    
+                    String[] commands = sb.toString().split(";");
+                    for(String s : commands) { System.out.println(s); }
+                }
+            }
+        }
+    }
+    
+    public enum OptDB { defaultDB, setPathDB, newDB }
+    
+    public static void restore() throws FileNotFoundException, IOException {
+        createNewDB();
+       /* try {
             Connection c = DriverManager.getConnection(
                     "jdbc:derby:C:\\git\\db\\a\\;create=true;user=vasya;password=65h90jgwc3j890hyg54jhpo453ujhip");
             Statement createStatement = c.createStatement();
@@ -573,6 +641,6 @@ public final class Backup {
             createStatement.execute("SET CURRENT SCHEMA vasya");
         } catch (SQLException ex) {
             Logger.getLogger(Backup.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }*/
     }
 }
