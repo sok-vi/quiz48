@@ -666,7 +666,12 @@ public class RestoreFrame extends JFrame {
                             _dblogin = db_tf_user.get().getText(),
                             _dbpwd = new String(db_pf_pwd.get().getPassword()),
                             _bk_path = bk_tf_path.get().getText();
-                    Boolean _user_loading = lo_ch_user.get().isSelected();
+                    Boolean _user_loading = lo_ch_user.get().isSelected(),
+                            _quiz = lo_ch_tests.get().isSelected(),
+                            _quiz_delete = lo_ch_tests_del.get().isSelected(),
+                            _result = lo_ch_results.get().isSelected(),
+                            _result_delete = lo_ch_results_del.get().isSelected(),
+                            _result_skip = lo_ch_results_skip.get().isSelected();
                     Backup.OptUser uopt = lo_rb_users_del.get().isSelected() ? 
                                                 Backup.OptUser.delete : 
                                                 (lo_rb_users_nodel.get().isSelected() ? 
@@ -698,13 +703,26 @@ public class RestoreFrame extends JFrame {
                     
                     TaskQueue.instance().addNewTask(() -> {
                         LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(thisFrame.get(), "Восстановление базы данных из бэкапа...");
-                      /*  try {
-                            Backup.restore(opt.get(), _dbpath, _dblogin, _dbpwd, _bk_path, _user_loading, uopt);
+                        try {
+                            Backup.restore(
+                                    opt.get(), 
+                                    _dbpath, 
+                                    _dblogin, 
+                                    _dbpwd, 
+                                    _bk_path, 
+                                    _user_loading, 
+                                    uopt, 
+                                    _quiz, 
+                                    _quiz_delete, 
+                                    _result, 
+                                    _result_delete, 
+                                    _result_skip
+                            );
                         } catch (IOException|SQLException ex) {
                             LoadingWindow.sleep(3);
                             cb.setInformation(ex.toString(), Color.RED);
                             ex.printStackTrace();
-                        }*/
+                        }
                         cb.setInformation(String.format("Данные восстановлены из бэкапа"));
                         LoadingWindow.sleep(2);
                         cb.exit();
