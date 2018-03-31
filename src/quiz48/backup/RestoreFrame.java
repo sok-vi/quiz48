@@ -146,7 +146,7 @@ public class RestoreFrame extends JFrame {
                     (db_rb_default.get().isSelected() || 
                     db_rb_exist.get().isSelected());
             lo_ch_results_skip.get().setEnabled(_results_lo);
-            lo_ch_results_del.get().setEnabled(_results_lo);
+            lo_ch_results_del.get().setEnabled(_results_lo && !lo_ch_tests_del.get().isSelected());
         };
         
         Runnable cn_upd_fields = () -> {

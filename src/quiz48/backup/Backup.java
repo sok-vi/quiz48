@@ -22,6 +22,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import quiz48.AppProperties;
@@ -575,14 +576,188 @@ public final class Backup {
         
         return bt;
     }
-    /*                        dto.writeUTF(rs.getString("name"));
+    
+    
+    /*quiz result
+    
+                            dto.writeUTF(rs.getString("login"));
+                        dto.writeInt(rs.getInt("status"));
+                        dto.writeLong(rs.getTimestamp("date").getTime());
+                        dto.writeInt(rs.getInt("time"));
+                        dto.writeInt(rs.getInt("duplicate"));
+
+    
+    query result
+    
+                            dto.writeInt(rs.getInt("query_id"));
+                        dto.writeUTF(rs.getString("answer"));
+                        dto.writeInt(rs.getInt("time"));
+                        dto.writeInt(rs.getInt("fail"));
+                        dto.writeInt(rs.getInt("duplicate"));
+
+    
+    */
+    
+    
+    private static void loadResults(            
+            ConnectDB conn, 
+            DataInputStream dti, 
+            HashMap<Integer, Integer> old_key_map,
+            int quiz_id,
+            BlockTitle bt) {
+        
+    }
+    
+    /*
+    
+                            dto.writeInt(rs.getInt("id"));
+                        dto.writeUTF(rs.getString("query"));
+                        dto.writeUTF(rs.getString("answer"));
+                        dto.writeInt(rs.getInt("is_visible_answer_in_result"));
+                        dto.writeInt(rs.getInt("sort"));
+                        dto.writeInt(rs.getInt("time"));
+                        dto.writeInt(rs.getInt("is_fix"));
+                        dto.writeInt(rs.getInt("repeat"));
+                        dto.writeInt(rs.getInt("ext"));
+                        dto.writeInt(rs.getInt("weight"));
+                        
+                        if(rs.getInt("is_fix") != 0) {
+
+    */
+
+    private static void loadQuerys(
+            ConnectDB conn, 
+            DataInputStream dti, 
+            boolean results, 
+            boolean skip_results_not_found_users, 
+            BlockTitle bt, 
+            int quiz_id) throws SQLException, IOException {
+        
+        //      old      new
+        HashMap<Integer, Integer> old_key_map = new HashMap<>();
+        
+        for(int i = 0; i < bt.count; ++i) {
+            Integer id = dti.readInt();
+            String qyery = dti.readUTF(),
+                    answer = dti.readUTF();
+            Integer is_visible_answer_in_result = dti.readInt(),
+                    sort = dti.readInt(),
+                    time = dti.readInt(),
+                    is_fix = dti.readInt(),
+                    repeat = dti.readInt(),
+                    ext = dti.readInt(),
+                    weight = dti.readInt();
+            Pointer<Integer> newID = new Pointer<>();
+            
+            conn.executeQuery((s) -> {
+                s.setString(1, qyery);
+                s.setString(2, answer);
+                s.setInt(3, is_visible_answer_in_result);
+                s.setInt(4, quiz_id);
+                s.setInt(5, sort);
+                s.setInt(6, time);
+                s.setInt(7, is_fix);
+                s.setInt(8, repeat);
+                s.setInt(9, ext);
+                s.setInt(10, weight);
+                s.executeLargeUpdate();
+                ResultSet rs = s.getGeneratedKeys();
+                if(rs.next()) {
+                    newID.put(rs.getInt(1));
+                    old_key_map.put(id, newID.get());
+                }
+                else {
+                    throw new SQLException("fail query add");
+                }
+            }, "INSERT INTO query (query, answer, is_visible_answer_in_result, "
+                    + "quiz_id, sort, time, is_fix, repeat, ext, weight) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            
+            if(is_fix != 0) {
+                BlockTitle answers_bt = loadBlockInfo(dti);
+                if(answers_bt.type != TYPE_ANSWER) { throw new IOException("fail content type"); }
+                for(int j = 0; j < answers_bt.count; ++j) {
+                    String answer_var = dti.readUTF();
+                    conn.executeQuery((s) -> {
+                        s.setInt(1, newID.get());
+                        s.setString(2, answer_var);
+                        s.executeUpdate();
+                    }, "INSERT INTO answer (query_id, answer) VALUES (?, ?)");
+                }
+            }
+        }
+        
+        if(results) {//????
+            BlockTitle rbt = loadBlockInfo(dti);
+            //???
+            loadResults(conn, dti, old_key_map, quiz_id, rbt);
+        }
+    }
+    /*
+    
+                        dto.writeUTF(rs.getString("name"));
                         dto.writeInt(rs.getInt("is_fix"));
                         dto.writeInt(rs.getInt("count"));
                         dto.writeInt(rs.getInt("time"));
                         dto.writeInt(rs.getInt("sort"));
                         dto.writeInt(rs.getInt("level"));
                         dto.writeInt(rs.getInt("repeat"));
+    
+    
 */
+    private static void loadQuizs(
+            ConnectDB conn, 
+            DataInputStream dti, 
+            boolean delete_quiz, 
+            boolean results, 
+            boolean delete_results, 
+            boolean skip_results_not_found_users, 
+            BlockTitle bt) throws SQLException, IOException {
+        if(delete_quiz) {
+            conn.executeQuery((s) -> { s.executeUpdate(); }, "DELETE FROM quiz");
+            conn.executeQuery((s) -> { s.executeUpdate(); }, "DELETE FROM query");
+            conn.executeQuery((s) -> { s.executeUpdate(); }, "DELETE FROM answer");
+        }
+        
+        if(delete_quiz || delete_results) {
+            conn.executeQuery((s) -> { s.executeUpdate(); }, "DELETE FROM quiz_result");
+            conn.executeQuery((s) -> { s.executeUpdate(); }, "DELETE FROM query_result");
+        }
+        
+        for(int i = 0; i < bt.count; ++i) {
+            String name = dti.readUTF();
+            Integer is_fix = dti.readInt(),
+                    count = dti.readInt(),
+                    time = dti.readInt(),
+                    sort = dti.readInt(),
+                    level = dti.readInt(),
+                    repeat = dti.readInt();
+            Pointer<Integer> newID = new Pointer<>();
+            
+            conn.executeQuery((s) -> {
+                s.setString(1, name);
+                s.setInt(2, is_fix);
+                s.setInt(3, count);
+                s.setInt(4, time);
+                s.setInt(5, sort);
+                s.setInt(6, level);
+                s.setInt(7, repeat);
+                s.executeUpdate();
+                ResultSet rs = s.getGeneratedKeys();
+                if(rs.next()) {
+                    newID.put(rs.getInt(1));
+                }
+                else {
+                    throw new SQLException("fail quiz add");
+                }
+            }, "INSERT INTO quiz (name, is_fix, count, time, sort, level, repeat) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            
+            BlockTitle qbt = loadBlockInfo(dti);
+            if(qbt.type != TYPE_QUERY) { throw new IOException("fail content type"); }
+            loadQuerys(conn, dti, results, skip_results_not_found_users, bt, newID.get());
+        }
+    }
+    
     private static void loadUsers(ConnectDB conn, DataInputStream dti, OptUser user, BlockTitle bt) throws SQLException, IOException {
         if(user == OptUser.delete) {
             conn.executeQuery((s) -> { s.execute(); }, "DELETE FROM users");
@@ -788,6 +963,12 @@ public final class Backup {
                     if((gflags & STORE_QUIZ) == STORE_CONTENT) {
                         BlockTitle bt = loadBlockInfo(dti);
                         if(bt.type != TYPE_QUIZ) { throw new IOException("fail content type"); }
+                        if(quiz) {
+                            loadQuizs(newConn, dti, delete_quiz, results && ((gflags & STORE_RESULTS) == STORE_RESULTS), delete_results, skip_results_not_found_users, bt);
+                        }
+                        else {
+                            fs.skip(bt.length);
+                        }
                     }
                 }
             }
