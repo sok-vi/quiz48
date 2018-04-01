@@ -487,7 +487,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.fill = GridBagConstraints.NONE;
                             _cc0.anchor = GridBagConstraints.WEST;
                             add(new JRadioButton() { {
-                                setText("- развернуть контент из бэкапа в папку по умолчанию, если есть");
+                                setText("<html>- развернуть контент из бэкапа в папку по умолчанию, если есть <br />(<span color=\"red\"><strong>содержимое указанного каталога будет удалено</strong></span>)</html>");
                                 setSelected(true);
                                 addChangeListener((e) -> { cn_upd_fields.run(); });
                                 cn_rb_default.put(this);
@@ -520,7 +520,7 @@ public class RestoreFrame extends JFrame {
                             _cc0.fill = GridBagConstraints.NONE;
                             _cc0.anchor = GridBagConstraints.WEST;
                             add(new JRadioButton() { {
-                                setText("- развернуть контент из бэкапав указанную папку, если есть");
+                                setText("<html>- развернуть контент из бэкапав указанную папку, если есть <br />(<span color=\"red\"><strong>содержимое указанного каталога будет удалено</strong></span>)</html>");
                                 addChangeListener((e) -> { cn_upd_fields.run(); });
                                 cn_rb_path.put(this);
                                 g1.add(this);
@@ -665,7 +665,8 @@ public class RestoreFrame extends JFrame {
                                         db_tf_path.get().getText(),
                             _dblogin = db_tf_user.get().getText(),
                             _dbpwd = new String(db_pf_pwd.get().getPassword()),
-                            _bk_path = bk_tf_path.get().getText();
+                            _bk_path = bk_tf_path.get().getText(),
+                            _cn_path = cn_tf_path.get().getText();
                     Boolean _user_loading = lo_ch_user.get().isSelected(),
                             _quiz = lo_ch_tests.get().isSelected(),
                             _quiz_delete = lo_ch_tests_del.get().isSelected(),
@@ -677,6 +678,9 @@ public class RestoreFrame extends JFrame {
                                                 (lo_rb_users_nodel.get().isSelected() ? 
                                                             Backup.OptUser.no_delete : 
                                                             Backup.OptUser.no_delete_skip);
+                    Backup.OptContent copt = cn_rb_default.get().isSelected() ? 
+                            Backup.OptContent.defaultDir : 
+                            (cn_rb_not.get().isSelected() ? Backup.OptContent.skip : Backup.OptContent.path);
                     
                     Pointer<Backup.OptDB> opt = new Pointer<>(Backup.OptDB.defaultDB);
                     if(db_rb_exist.get().isSelected()) {
@@ -716,7 +720,9 @@ public class RestoreFrame extends JFrame {
                                     _quiz_delete, 
                                     _result, 
                                     _result_delete, 
-                                    _result_skip
+                                    _result_skip,
+                                    copt,
+                                    _cn_path
                             );
                         } catch (IOException|SQLException ex) {
                             LoadingWindow.sleep(3);

@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import quiz48.AppProperties;
@@ -420,18 +421,25 @@ public final class Backup {
         sbi.count = count.get();
     }
     
-    private static void storeContent(File f, FileOutputStream fs, DataOutputStream dto, int level) throws IOException {
+    private static void storeContent(File f, FileOutputStream fs, DataOutputStream dto, int level, StoreBlockInfo sbi) throws IOException {
         if(f.isDirectory()) {
-            dto.writeByte(FS_ENTITY_TYPE_DIR);
-            dto.writeInt(level);
-            dto.writeUTF(f.getName());
+            if(level > 0) {
+                ++sbi.count;
+                dto.writeByte(FS_ENTITY_TYPE_DIR);
+                dto.writeInt(level);
+                dto.writeInt(0);
+                dto.writeUTF(f.getName());
+            }
             File[] list = f.listFiles();
             for(File cf : list) {
-                storeContent(cf, fs, dto, level + 1);
+                storeContent(cf, fs, dto, level + (cf.isDirectory() ? 1 : 0), sbi);
             }
         }
         else {
+            ++sbi.count;
             dto.writeByte(FS_ENTITY_TYPE_FILE);
+            dto.writeInt(level);
+            dto.writeInt((int)f.length());//будем считать , что нет очень больших файлов в контенте
             dto.writeUTF(f.getName());
             copyTmpFile(fs, f);
         }
@@ -552,7 +560,8 @@ public final class Backup {
                     //сохраняем конент
                     try(FileOutputStream tmpfs = new FileOutputStream(info.tmpFile)) {
                         try(DataOutputStream tmpdto = new DataOutputStream(tmpfs)) {
-                            storeContent(new File(contentPath), tmpfs, tmpdto, 0);
+                            info.count = 0;
+                            storeContent(new File(contentPath), tmpfs, tmpdto, 0, info);
                         }
                     }
 
@@ -893,6 +902,66 @@ public final class Backup {
         }
     }
     
+    public enum OptContent { defaultDir, skip, path }
+    
+    private static void loadContent(FileInputStream fs, DataInputStream dti, OptContent opt, String path, BlockTitle bt) throws IOException {
+        String b_path = path;
+        if(b_path.charAt(b_path.length() - 1) != File.separatorChar) {
+            if((b_path.charAt(b_path.length() - 1) == '/') || 
+                    (b_path.charAt(b_path.length() - 1) == '\\')) {
+                b_path = String.format("%1$s%2$s", b_path.substring(0, path.length() - 1), File.separator);
+            }
+            else {
+                b_path += File.separator;
+            }
+        }
+        
+        File pd = new File(b_path);
+        File[] old_files = pd.listFiles();
+        if(old_files != null) { for(File df : old_files) { df.delete(); } }
+        
+        LinkedList<String> p_elenets = new LinkedList<>();
+        byte[] buffer = new byte[1024];
+        for(int i = 0; i < bt.count; ++i) {
+            byte en = dti.readByte();
+            int clevel = dti.readInt();
+            int f_length = dti.readInt();
+            String name = dti.readUTF();
+            String _path = b_path;
+            while(clevel < p_elenets.size()) { p_elenets.removeLast(); }
+            for(String pi : p_elenets) { _path += pi + File.separator; }
+            switch(en) {
+                case FS_ENTITY_TYPE_DIR:
+                    File d = new File(_path + name);
+                    if(!d.mkdir()) { throw new IOException("dir create fail"); }
+                    p_elenets.add(name);
+                    break;
+                case FS_ENTITY_TYPE_FILE:
+                    File f = new File(_path + name);
+                    if(!f.createNewFile()) { throw new IOException("file create fail"); }
+                    try(FileOutputStream fsi = new FileOutputStream(f)) {
+                        while(f_length > 0) {
+                            if(f_length > buffer.length) {
+                                f_length -= buffer.length;
+                                if(fs.read(buffer, 0, buffer.length) != buffer.length) {
+                                    throw new IOException("fail read");
+                                }
+                                fsi.write(buffer, 0, buffer.length);
+                            }
+                            else {
+                                if(fs.read(buffer, 0, f_length) != f_length) {
+                                    throw new IOException("fail read");
+                                }
+                                fsi.write(buffer, 0, f_length);
+                                f_length = 0;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+    
     private static ConnectDB createNewDB(
             String db_path,
             String db_login,
@@ -1012,7 +1081,10 @@ public final class Backup {
             /*results*/
             boolean results,
             boolean delete_results,
-            boolean skip_results_not_found_users
+            boolean skip_results_not_found_users,
+            /*content*/
+            OptContent cnt,
+            String cnt_path
             ) throws FileNotFoundException, IOException, SQLException {
         
         ConnectDB newConn = null;
@@ -1059,6 +1131,12 @@ public final class Backup {
                         else {
                             fs.skip(bt.length);
                         }
+                    }
+                    
+                    if(((gflags & STORE_CONTENT) == STORE_CONTENT) && (cnt != OptContent.skip)) {
+                        BlockTitle bt = loadBlockInfo(dti);
+                        if(bt.type != TYPE_CONTENT) { throw new IOException("fail content type"); }
+                        loadContent(fs, dti, cnt, cnt_path, bt);
                     }
                 }
             }
