@@ -22,6 +22,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -598,14 +599,97 @@ public final class Backup {
     
     */
     
+    private static void loadQueryResults(            
+            ConnectDB conn, 
+            DataInputStream dti, 
+            HashMap<Integer, Integer> old_key_map,
+            BlockTitle bt,
+            int quiz_result_id) throws IOException, SQLException {
+        
+        for(int i = 0; i < bt.count; ++i) {
+            int query_id = dti.readInt();
+            if(!old_key_map.containsKey(query_id)) { throw new SQLException("fail query id"); }
+            int new_query_id = old_key_map.get(query_id);
+            String answer = dti.readUTF();
+            int time = dti.readInt(),
+                    fail = dti.readInt(),
+                    duplicate = dti.readInt();
+            
+            conn.executeQuery((s) -> {
+                s.setInt(1, quiz_result_id);
+                s.setInt(2, new_query_id);
+                s.setString(3, answer);
+                s.setInt(4, time);
+                s.setInt(5, fail);
+                s.setInt(6, duplicate);
+                s.executeUpdate();
+            }, "INSERT INTO query_result (quiz_result_id, query_id, answer, time, fail, duplicate) VALUES (?, ?, ?, ?, ?, ?)");
+        }
+    }
     
     private static void loadResults(            
             ConnectDB conn, 
             DataInputStream dti, 
             HashMap<Integer, Integer> old_key_map,
             int quiz_id,
-            BlockTitle bt) {
+            BlockTitle bt,
+            boolean skip_results_not_found_users) throws IOException, SQLException {
         
+        for(int i = 0; i < bt.count; ++i) {
+            String login = dti.readUTF();
+            int status = dti.readInt();
+            Timestamp dt = new Timestamp(dti.readLong());
+            int fail = dti.readInt(),
+                    time = dti.readInt(),
+                    duplicate = dti.readInt();
+            Pointer<Integer> user_id = new Pointer<>(),
+                    new_quiz_result_id = new Pointer<>();
+            Pointer<Boolean> query_user_fail = new Pointer<>(false);
+            
+            conn.executeQuery((s) -> {
+                s.setString(1, login);
+                ResultSet rs = s.executeQuery();
+                if(rs.next()) {
+                    user_id.put(rs.getInt("id"));
+                }
+                else {
+                    if(!skip_results_not_found_users) {
+                        throw new SQLException("fail link result to user");
+                    }
+                    else {
+                        query_user_fail.put(true);
+                    }
+                }
+            }, "SELECT id FROM users WHERE login=?");
+            
+            if(!query_user_fail.get()) {
+                conn.executeQuery((s) -> {
+                    s.setInt(1, quiz_id);
+                    s.setInt(2, user_id.get());
+                    s.setInt(3, status);
+                    s.setTimestamp(4, dt);
+                    s.setInt(5, time);
+                    s.setInt(6, duplicate);
+                    s.executeUpdate();
+                    ResultSet rs = s.getGeneratedKeys();
+                    if(rs.next()) {
+                        new_quiz_result_id.put(rs.getInt(1));
+                    }
+                    else {
+                        throw new SQLException("fail quiz result add");
+                    }
+                }, "INSERT INTO quiz_result (quiz_id, user_id, status, date, time, duplicate) VALUES (?, ?, ?, ?, ?, ?)");
+            }
+            
+            BlockTitle qrbt = loadBlockInfo(dti);
+            if(qrbt.type != TYPE_QUERY_RESULT) { throw new IOException("fail content type"); }
+            if(query_user_fail.get()) {
+                dti.skip(qrbt.length);
+            }
+            else {
+                loadQueryResults(conn, dti, old_key_map, qrbt, new_quiz_result_id.get());
+            }
+        }
     }
     
     /*
@@ -628,13 +712,9 @@ public final class Backup {
     private static void loadQuerys(
             ConnectDB conn, 
             DataInputStream dti, 
-            boolean results, 
-            boolean skip_results_not_found_users, 
             BlockTitle bt, 
-            int quiz_id) throws SQLException, IOException {
-        
-        //      old      new
-        HashMap<Integer, Integer> old_key_map = new HashMap<>();
+            int quiz_id,
+            HashMap<Integer, Integer> old_key_map) throws SQLException, IOException {
         
         for(int i = 0; i < bt.count; ++i) {
             Integer id = dti.readInt();
@@ -686,12 +766,6 @@ public final class Backup {
                 }
             }
         }
-        
-        if(results) {//????
-            BlockTitle rbt = loadBlockInfo(dti);
-            //???
-            loadResults(conn, dti, old_key_map, quiz_id, rbt);
-        }
     }
     /*
     
@@ -710,6 +784,7 @@ public final class Backup {
             DataInputStream dti, 
             boolean delete_quiz, 
             boolean results, 
+            boolean stored_results,
             boolean delete_results, 
             boolean skip_results_not_found_users, 
             BlockTitle bt) throws SQLException, IOException {
@@ -726,7 +801,7 @@ public final class Backup {
         
         for(int i = 0; i < bt.count; ++i) {
             String name = dti.readUTF();
-            Integer is_fix = dti.readInt(),
+            int is_fix = dti.readInt(),
                     count = dti.readInt(),
                     time = dti.readInt(),
                     sort = dti.readInt(),
@@ -752,9 +827,23 @@ public final class Backup {
                 }
             }, "INSERT INTO quiz (name, is_fix, count, time, sort, level, repeat) VALUES (?, ?, ?, ?, ?, ?, ?)");
             
+            //мап, который увяжет старые и новые id querys
+            //      old      new
+            HashMap<Integer, Integer> old_key_map = new HashMap<>();
             BlockTitle qbt = loadBlockInfo(dti);
             if(qbt.type != TYPE_QUERY) { throw new IOException("fail content type"); }
-            loadQuerys(conn, dti, results, skip_results_not_found_users, bt, newID.get());
+            loadQuerys(conn, dti, bt, newID.get(), old_key_map);
+            
+            if(stored_results) {
+                BlockTitle res_bt = loadBlockInfo(dti);
+                if(res_bt.type != TYPE_QUIZ_RESULT) { throw new IOException("fail content type"); }
+                if(results) {
+                    loadResults(conn, dti, old_key_map, newID.get(), res_bt, skip_results_not_found_users);
+                }
+                else {
+                    dti.skip(res_bt.length);
+                }
+            }
         }
     }
     
@@ -964,7 +1053,7 @@ public final class Backup {
                         BlockTitle bt = loadBlockInfo(dti);
                         if(bt.type != TYPE_QUIZ) { throw new IOException("fail content type"); }
                         if(quiz) {
-                            loadQuizs(newConn, dti, delete_quiz, results && ((gflags & STORE_RESULTS) == STORE_RESULTS), delete_results, skip_results_not_found_users, bt);
+                            loadQuizs(newConn, dti, delete_quiz, results, (gflags & STORE_RESULTS) == STORE_RESULTS, delete_results, skip_results_not_found_users, bt);
                         }
                         else {
                             fs.skip(bt.length);
