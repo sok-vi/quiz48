@@ -13,10 +13,13 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -672,7 +675,8 @@ public class RestoreFrame extends JFrame {
                             _quiz_delete = lo_ch_tests_del.get().isSelected(),
                             _result = lo_ch_results.get().isSelected(),
                             _result_delete = lo_ch_results_del.get().isSelected(),
-                            _result_skip = lo_ch_results_skip.get().isSelected();
+                            _result_skip = lo_ch_results_skip.get().isSelected(),
+                            _store_setting = us_ch_set_setting.get().isSelected();
                     Backup.OptUser uopt = lo_rb_users_del.get().isSelected() ? 
                                                 Backup.OptUser.delete : 
                                                 (lo_rb_users_nodel.get().isSelected() ? 
@@ -724,6 +728,21 @@ public class RestoreFrame extends JFrame {
                                     copt,
                                     _cn_path
                             );
+                            
+                            //запомним настройки
+                            if(_store_setting) {
+                                Properties ps = new Properties();
+                                try(FileInputStream fis = new FileInputStream(PackageLocation.thisPackagePath + "quiz48.properties")) {
+                                    ps.load(fis);
+                                }
+                                ps.setProperty("db.path", _dbpath);
+                                ps.setProperty("db.login", _dblogin);
+                                ps.setProperty("db.password", _dbpwd);
+                                ps.setProperty("content.path", _cn_path);
+                                try(FileOutputStream fos = new FileOutputStream(PackageLocation.thisPackagePath + "quiz48.properties")) {
+                                    ps.store(fos, "");
+                                }
+                            }
                         } catch (IOException|SQLException ex) {
                             LoadingWindow.sleep(3);
                             cb.setInformation(ex.toString(), Color.RED);
