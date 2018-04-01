@@ -420,13 +420,14 @@ public final class Backup {
         sbi.count = count.get();
     }
     
-    private static void storeContent(File f, FileOutputStream fs, DataOutputStream dto) throws IOException {
+    private static void storeContent(File f, FileOutputStream fs, DataOutputStream dto, int level) throws IOException {
         if(f.isDirectory()) {
             dto.writeByte(FS_ENTITY_TYPE_DIR);
+            dto.writeInt(level);
             dto.writeUTF(f.getName());
             File[] list = f.listFiles();
             for(File cf : list) {
-                storeContent(cf, fs, dto);
+                storeContent(cf, fs, dto, level + 1);
             }
         }
         else {
@@ -551,7 +552,7 @@ public final class Backup {
                     //сохраняем конент
                     try(FileOutputStream tmpfs = new FileOutputStream(info.tmpFile)) {
                         try(DataOutputStream tmpdto = new DataOutputStream(tmpfs)) {
-                            storeContent(new File(contentPath), tmpfs, tmpdto);
+                            storeContent(new File(contentPath), tmpfs, tmpdto, 0);
                         }
                     }
 
@@ -639,7 +640,7 @@ public final class Backup {
             String login = dti.readUTF();
             int status = dti.readInt();
             Timestamp dt = new Timestamp(dti.readLong());
-            int fail = dti.readInt(),
+            int //fail = dti.readInt(),
                     time = dti.readInt(),
                     duplicate = dti.readInt();
             Pointer<Integer> user_id = new Pointer<>(),
@@ -832,7 +833,7 @@ public final class Backup {
             HashMap<Integer, Integer> old_key_map = new HashMap<>();
             BlockTitle qbt = loadBlockInfo(dti);
             if(qbt.type != TYPE_QUERY) { throw new IOException("fail content type"); }
-            loadQuerys(conn, dti, bt, newID.get(), old_key_map);
+            loadQuerys(conn, dti, qbt, newID.get(), old_key_map);
             
             if(stored_results) {
                 BlockTitle res_bt = loadBlockInfo(dti);
@@ -1049,7 +1050,7 @@ public final class Backup {
                     }
                     
                     //читаем викторины
-                    if((gflags & STORE_QUIZ) == STORE_CONTENT) {
+                    if((gflags & STORE_QUIZ) == STORE_QUIZ) {
                         BlockTitle bt = loadBlockInfo(dti);
                         if(bt.type != TYPE_QUIZ) { throw new IOException("fail content type"); }
                         if(quiz) {
