@@ -391,8 +391,8 @@ public class BackupFrame extends JFrame {
                                 if(ret == JFileChooser.APPROVE_OPTION) {
                                     String dir = fod.getSelectedFile().getAbsolutePath();
                                     if((dir.length() > 0) && 
-                                            (dir.charAt(dir.length() - 1) != '\\')) { 
-                                        dir += "\\"; 
+                                            (dir.charAt(dir.length() - 1) != File.separatorChar)) { 
+                                        dir += File.separator; 
                                     }
                                     tf_content_path.get().setText(dir);
                                 }

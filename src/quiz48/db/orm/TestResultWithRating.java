@@ -22,7 +22,7 @@ public class TestResultWithRating extends TestResult {
         public LoadPageInfo(int curr, int count) { currPage = curr; pageCount = count; }
     }
     
-    private final static int PAGE_SIZE = 10;
+    private final static int PAGE_SIZE = 50;
     public final double rating;
     
     public TestResultWithRating(int ID, int time, User user, Test test, Timestamp date, boolean duplicate, status status, double rating) {
