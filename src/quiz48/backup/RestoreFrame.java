@@ -263,8 +263,8 @@ public class RestoreFrame extends JFrame {
                                     if(ret == JFileChooser.APPROVE_OPTION) {
                                         String dir = fod.getSelectedFile().getAbsolutePath();
                                         if((dir.length() > 0) && 
-                                                (dir.charAt(dir.length() - 1) != '\\')) { 
-                                            dir += "\\"; 
+                                                (dir.charAt(dir.length() - 1) != File.separatorChar)) { 
+                                            dir += File.separator; 
                                         }
                                         db_tf_path.get().setText(dir);
                                     }
@@ -586,8 +586,8 @@ public class RestoreFrame extends JFrame {
                                     if(ret == JFileChooser.APPROVE_OPTION) {
                                         String dir = fod.getSelectedFile().getAbsolutePath();
                                         if((dir.length() > 0) && 
-                                                (dir.charAt(dir.length() - 1) != '\\')) { 
-                                            dir += "\\"; 
+                                                (dir.charAt(dir.length() - 1) != File.separatorChar)) { 
+                                            dir += File.separator; 
                                         }
                                         cn_tf_path.get().setText(dir);
                                     }
