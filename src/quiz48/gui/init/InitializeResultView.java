@@ -20,7 +20,10 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -277,10 +280,20 @@ public class InitializeResultView {
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
             add(new JPanel() { {
+                JPopupMenu fmenu = new JPopupMenu() { {
+                    add(new JMenuItem("По названию теста..."));
+                    add(new JMenuItem("По дате/времени..."));
+                    add(new JMenuItem("По логину..."));
+                    add(new JMenuItem("По имени..."));
+                } };
+                Pointer<JPanel> thisPanel = new Pointer<>(this);
                 setLayout(new FlowLayout(FlowLayout.LEFT));
                 add(new JButton() { {
                     setIcon(AppIcons.instance().get("add_filter16.png"));
                     setText("Добавить фильтр...");
+                    addActionListener((e) -> {
+                        fmenu.show(thisPanel.get(), getX(), getY() + getHeight());
+                    });
                 } });
             } }, BorderLayout.WEST);
             add(new JPanel(), BorderLayout.CENTER);
