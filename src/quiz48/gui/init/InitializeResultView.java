@@ -141,12 +141,12 @@ public class InitializeResultView {
             add(new JPanel(), BorderLayout.CENTER);
             add(new JPanel() { {
                 setLayout(new FlowLayout(FlowLayout.RIGHT));
-                add(new JButton() { {
+                /*add(new JButton() { {
                     setText("Построить отчёт по результатам...");
                     setIcon(AppIcons.instance().get("report32.png"));
                     addActionListener((e) -> {
                     });
-                } });
+                } });*/
                 add(new JLabel(AppIcons.instance().get("test_result64.png")));
             } }, BorderLayout.EAST);
         } }, BorderLayout.NORTH);
