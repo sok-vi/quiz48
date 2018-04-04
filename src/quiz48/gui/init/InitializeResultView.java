@@ -39,6 +39,7 @@ import quiz48.db.orm.TestResultWithRating;
 import quiz48.gui.AppIcons;
 import quiz48.gui.BottomPanel;
 import quiz48.gui.DuplicateCellRenderer;
+import quiz48.gui.FilterDlg;
 import quiz48.gui.LoadingWindow;
 import quiz48.gui.PercentCellValue;
 import quiz48.gui.User;
@@ -281,10 +282,34 @@ public class InitializeResultView {
             setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
             add(new JPanel() { {
                 JPopupMenu fmenu = new JPopupMenu() { {
-                    add(new JMenuItem("По названию теста..."));
-                    add(new JMenuItem("По дате/времени..."));
-                    add(new JMenuItem("По логину..."));
-                    add(new JMenuItem("По имени..."));
+                    add(new JMenuItem() { {
+                        setText("По названию теста...");
+                        addActionListener((e) -> {
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.test);
+                            dlg.setVisible(true);
+                        });
+                    } });
+                    add(new JMenuItem() { {
+                        setText("По дате/времени...");
+                        addActionListener((e) -> {
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.date);
+                            dlg.setVisible(true);
+                        });
+                    } });
+                    add(new JMenuItem() { {
+                        setText("По логину...");
+                        addActionListener((e) -> {
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.login);
+                            dlg.setVisible(true);
+                        });
+                    } });
+                    add(new JMenuItem() { {
+                        setText("По имени...");
+                        addActionListener((e) -> {
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.name);
+                            dlg.setVisible(true);
+                        });
+                    } });
                 } };
                 Pointer<JPanel> thisPanel = new Pointer<>(this);
                 setLayout(new FlowLayout(FlowLayout.LEFT));
