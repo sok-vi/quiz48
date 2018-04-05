@@ -49,6 +49,20 @@ public class FilterDlg extends JDialog {
         void set(Filter newFilter);
     }
     
+    public static class FilterWidget extends JPanel {
+        public FilterWidget(filterType type) {
+            super();
+            setLayout(new BorderLayout());
+            add(new JPanel() { {} }, BorderLayout.CENTER);
+            add(new JPanel() { {
+                
+            } }, BorderLayout.EAST);
+            add(new JPanel() { {
+                
+            } }, BorderLayout.WEST);
+        }
+    }
+    
     public FilterDlg(Window wnd, filterType t, FilterSetCallback fcb) {
         super(wnd);
         setModal(true);
