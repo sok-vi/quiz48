@@ -285,28 +285,28 @@ public class InitializeResultView {
                     add(new JMenuItem() { {
                         setText("По названию теста...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.test);
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.test, (f) -> {});
                             dlg.setVisible(true);
                         });
                     } });
                     add(new JMenuItem() { {
                         setText("По дате/времени...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.date);
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.date, (f) -> {});
                             dlg.setVisible(true);
                         });
                     } });
                     add(new JMenuItem() { {
                         setText("По логину...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.login);
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.login, (f) -> {});
                             dlg.setVisible(true);
                         });
                     } });
                     add(new JMenuItem() { {
                         setText("По имени...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.name);
+                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.name, (f) -> {});
                             dlg.setVisible(true);
                         });
                     } });

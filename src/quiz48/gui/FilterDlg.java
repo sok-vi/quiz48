@@ -6,6 +6,7 @@
 package quiz48.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -20,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import quiz48.Pointer;
 import quiz48.WindowLocation;
+import quiz48.db.orm.TestResultWithRating.SQLWhereCreator;
 
 /**
  *
@@ -33,9 +35,6 @@ public class FilterDlg extends JDialog {
         name//по имени пользователя
     }
     
-    public interface SQLParams {
-        void where(String SQLWhere, Object[] params);
-    }
     
     public interface DeleteFilterEvent {
         void deleteFilter(JPanel w, Filter f);
@@ -43,10 +42,14 @@ public class FilterDlg extends JDialog {
     
     public interface Filter {
         JPanel createWidget(DeleteFilterEvent de);
-        void SetSQLWhere(SQLParams i);
+        void SetSQLWhere(SQLWhereCreator i);
     }
     
-    public FilterDlg(Window wnd, filterType t) {
+    public interface FilterSetCallback {
+        void set(Filter newFilter);
+    }
+    
+    public FilterDlg(Window wnd, filterType t, FilterSetCallback fcb) {
         super(wnd);
         setModal(true);
         setResizable(false);
@@ -69,6 +72,7 @@ public class FilterDlg extends JDialog {
         inpPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         add(inpPanel, BorderLayout.CENTER);
         
+        Pointer<Color> defBkColor = new Pointer<>();
         GridBagConstraints _cc = new GridBagConstraints();
         Insets _is1 = new Insets(0, 0, 5, 5), is2 = _cc.insets;
         

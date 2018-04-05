@@ -5,6 +5,7 @@
  */
 package quiz48.db.orm;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -17,6 +18,14 @@ import quiz48.db.ConnectDB;
  * @author vasya
  *///SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
 public class TestResultWithRating extends TestResult {
+    public interface SQLWhereParams {
+        void SetParams(PreparedStatement s, int startParamIndex);
+    }
+    
+    public interface SQLWhereCreator {
+        void where(String SQLWhere, SQLWhereParams params);
+    }
+    
     public final static class LoadPageInfo {
         public final int currPage, pageCount;
         public LoadPageInfo(int curr, int count) { currPage = curr; pageCount = count; }
