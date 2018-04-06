@@ -13,6 +13,7 @@
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
                 <include name="content/**"/>
+                <include name="**.bat"/>
             </fileset>
         </copy>    
         <description>Builds, tests, and runs the project quiz48.</description>
@@ -22,6 +23,7 @@
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
                 <include name="content/**"/>
+                <include name="**.bat"/>
             </fileset>
         </copy>    
         <description>Builds, tests, and runs the project quiz48.</description>
@@ -33,6 +35,7 @@
             <fileset dir="data/">
                 <include name="quiz48.properties"/>
                 <include name="content/**"/>
+                <include name="**.bat"/>
             </fileset>
         </copy>
     </target>

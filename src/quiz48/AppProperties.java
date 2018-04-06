@@ -33,10 +33,10 @@ public class AppProperties {
             Properties ps = new Properties();
             ps.load(fis);
             _LookAndFeel = ps.getProperty("LookAndFeel", null);
-            _DBPath = ps.getProperty("db.path", String.format("%1$s%3$s%3$s", PackageLocation.thisPackagePath, "quiz48", File.separator));
+            _DBPath = ps.getProperty("db.path", PackageLocation.thisPackagePath + "/");
             _DBLogin = ps.getProperty("db.login", "vasya");
             _DBPassword = ps.getProperty("db.password", "65h90jgwc3j890hyg54jhpo453ujhip");
-            _ContentPath = ps.getProperty("content.path", String.format("%1$s%2$s%3$s", PackageLocation.thisPackagePath, "content", File.separator));
+            _ContentPath = ps.getProperty("content.path", String.format("%1$s%2$s%3$s", PackageLocation.thisPackagePath, "content", "/"));
         }
         catch(IOException e) { }
         

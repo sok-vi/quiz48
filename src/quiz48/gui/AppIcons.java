@@ -5,7 +5,6 @@
  */
 package quiz48.gui;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Random;
 import javax.swing.ImageIcon;
@@ -25,7 +24,7 @@ public final class AppIcons {
                     resouceKey, 
                     new ImageIcon(
                             m_ThisClass.getResource(
-                                    String.format("resource%1$s%2$s", File.separator, resouceKey))));
+                                    String.format("resource/%1$s", resouceKey))));
         }
         
         return m_IconMap.get(resouceKey);

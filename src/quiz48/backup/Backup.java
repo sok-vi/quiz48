@@ -921,21 +921,10 @@ public final class Backup {
     
     private static void loadContent(FileInputStream fs, DataInputStream dti, OptContent opt, String path, BlockTitle bt) throws IOException {
         String b_path = path;
-        /*if(b_path.charAt(b_path.length() - 1) != File.separatorChar) {
-            if((b_path.charAt(b_path.length() - 1) == '/') || 
-                    (b_path.charAt(b_path.length() - 1) == '\\')) {
-                b_path = String.format("%1$s%2$s", b_path.substring(0, path.length() - 1), File.separator);
-            }
-            else {
-                b_path += File.separator;
-            }
-        }*/
         
         File pd = new File(b_path);
         File[] files = pd.listFiles();
         if(files != null) { for(File f : files) { deleteFile(f); } }
-        //File[] old_files = pd.listFiles();
-        //if(old_files != null) { for(File df : old_files) { deleteFile(df); } }
         
         LinkedList<String> p_elenets = new LinkedList<>();
         byte[] buffer = new byte[1024];
