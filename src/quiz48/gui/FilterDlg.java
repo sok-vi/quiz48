@@ -36,31 +36,51 @@ public class FilterDlg extends JDialog {
     }
     
     
+    public static abstract class FilterWidget extends JPanel implements Filter {
+        protected final JLabel m_Label;
+        protected final JButton m_Button;
+        
+        public FilterWidget() {
+            super();
+            setLayout(new FlowLayout(FlowLayout.LEFT));
+            m_Label = new JLabel();
+            add(m_Label);
+            m_Button = new JButton();
+            m_Button.setIcon(AppIcons.instance().get("close16.png"));
+            add(m_Button);
+            setBorder(BorderFactory.createEtchedBorder());
+        }
+    }
+    
     public interface DeleteFilterEvent {
-        void deleteFilter(JPanel w, Filter f);
+        void deleteFilter(FilterWidget f);
     }
     
     public interface Filter {
-        JPanel createWidget(DeleteFilterEvent de);
+        void setCloseEvent(DeleteFilterEvent de);
         void SetSQLWhere(SQLWhereCreator i);
     }
     
     public interface FilterSetCallback {
-        void set(Filter newFilter);
+        void set(FilterWidget newFilter);
     }
     
-    public static class FilterWidget extends JPanel {
-        public FilterWidget(filterType type) {
+    public static class TestFilter extends FilterWidget implements Filter {
+        public TestFilter(String test) {
             super();
-            setLayout(new BorderLayout());
-            add(new JPanel() { {} }, BorderLayout.CENTER);
-            add(new JPanel() { {
-                
-            } }, BorderLayout.EAST);
-            add(new JPanel() { {
-                
-            } }, BorderLayout.WEST);
+            m_Label.setText(String.format("Логин: %1$s", test));
         }
+        
+        @Override
+        public void setCloseEvent(DeleteFilterEvent de) {
+            m_Button.addActionListener((e) -> { de.deleteFilter(this); });
+        }
+
+        @Override
+        public void SetSQLWhere(SQLWhereCreator i) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
     }
     
     public FilterDlg(Window wnd, filterType t, FilterSetCallback fcb) {
@@ -116,9 +136,17 @@ public class FilterDlg extends JDialog {
                 _cc.anchor = GridBagConstraints.CENTER;
                 JTextField _test_field = new JTextField();
                 testField.put(_test_field);
+                defBkColor.put(_test_field.getBackground());
                 _test_field.setColumns(25);
                 inpPanel.add(_test_field, _cc);
                 setFilterButton.addActionListener((e) -> {
+                    if(_test_field.getText().length() == 0) {
+                        _test_field.setBackground(Color.red);
+                    }
+                    else {
+                        fcb.set(new TestFilter(_test_field.getText()));
+                        dispose();
+                    }
                 });
                 break;
             case date:
@@ -242,6 +270,8 @@ public class FilterDlg extends JDialog {
                     setEnabled(false);
                     label3.put(this);
                 } }, _cc);
+                setFilterButton.addActionListener((e) -> {
+                });
                 break;
             case login:
                 Pointer<JTextField> _loginField = new Pointer<>();

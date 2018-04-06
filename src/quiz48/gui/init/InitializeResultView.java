@@ -82,6 +82,7 @@ public class InitializeResultView {
         main.removeAll();
         main.setLayout(new BorderLayout());
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
+        LinkedList<FilterDlg.Filter> filters = new LinkedList<>();
         
         Pointer<Integer> pageCount = new Pointer<>(page_count);
         Pointer<JButton> prevButton = new Pointer<>(),
@@ -281,11 +282,25 @@ public class InitializeResultView {
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createEmptyBorder(0, 7, 0, 7));
             add(new JPanel() { {
+                Pointer<JPanel> thisPanel = new Pointer<>(this);
+                final FilterDlg.DeleteFilterEvent dfe = (w) -> {
+                    thisPanel.get().remove(w);
+                    filters.remove(w);
+                    thisPanel.get().revalidate();
+                };
                 JPopupMenu fmenu = new JPopupMenu() { {
                     add(new JMenuItem() { {
                         setText("По названию теста...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.test, (f) -> {});
+                            FilterDlg dlg = new FilterDlg(
+                                    wnd, 
+                                    FilterDlg.filterType.test, 
+                                    (f) -> {
+                                        f.setCloseEvent(dfe);
+                                        filters.add(f);
+                                        thisPanel.get().add(f);
+                                        thisPanel.get().revalidate();
+                                    });
                             dlg.setVisible(true);
                         });
                     } });
@@ -311,7 +326,6 @@ public class InitializeResultView {
                         });
                     } });
                 } };
-                Pointer<JPanel> thisPanel = new Pointer<>(this);
                 setLayout(new FlowLayout(FlowLayout.LEFT));
                 add(new JButton() { {
                     setIcon(AppIcons.instance().get("add_filter16.png"));
