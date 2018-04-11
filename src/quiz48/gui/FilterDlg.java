@@ -12,6 +12,11 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Window;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -186,6 +191,8 @@ public class FilterDlg extends JDialog {
                 _cc.fill = GridBagConstraints.HORIZONTAL;
                 _cc.anchor = GridBagConstraints.CENTER;
                 JTextField _date1_field = new JTextField();
+                _date1_field.setText((new SimpleDateFormat("dd.MM.yyyy")).format(new Date()));
+                defBkColor.put(_date1_field.getBackground());
                 date1Field.put(_date1_field);
                 _date1_field.setColumns(25);
                 inpPanel.add(_date1_field, _cc);
@@ -223,6 +230,22 @@ public class FilterDlg extends JDialog {
                         label2.get().setEnabled(en);
                         label3.get().setEnabled(en);
                         date2Field.get().setEnabled(en);
+                        
+                        if(en) {
+                            String sdate = date1Field.get().getText();
+                            if(sdate.length() > 0) {
+                                Date d = null;
+                                try {
+                                    d = (new SimpleDateFormat("dd.MM.yyyy")).parse(sdate);
+                                    date1Field.get().setText((new SimpleDateFormat("dd.MM.yyyy HH:mm")).format(d));
+                                    d.setTime(d.getTime() + 1000 * 60 * 60 * 24);
+                                    date2Field.get().setText((new SimpleDateFormat("dd.MM.yyyy HH:mm")).format(d));
+                                } catch (ParseException ex) { }
+                            }
+                        }
+                        else {
+                            
+                        }
                     });
                 } }, _cc);
                 
@@ -271,6 +294,12 @@ public class FilterDlg extends JDialog {
                     label3.put(this);
                 } }, _cc);
                 setFilterButton.addActionListener((e) -> {
+                    if(chBox.get().isSelected()) {
+                        
+                    }
+                    else {
+                        
+                    }
                 });
                 break;
             case login:
