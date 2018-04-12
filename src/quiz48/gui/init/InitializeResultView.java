@@ -25,6 +25,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
@@ -307,22 +308,59 @@ public class InitializeResultView {
                     add(new JMenuItem() { {
                         setText("По дате/времени...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.date, (f) -> {});
+                            FilterDlg dlg = new FilterDlg(
+                                    wnd, 
+                                    FilterDlg.filterType.date, 
+                                    (f) -> {
+                                        f.setCloseEvent(dfe);
+                                        filters.add(f);
+                                        thisPanel.get().add(f);
+                                        thisPanel.get().revalidate();
+                                    });
                             dlg.setVisible(true);
                         });
                     } });
                     add(new JMenuItem() { {
                         setText("По логину...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.login, (f) -> {});
+                            FilterDlg dlg = new FilterDlg(
+                                    wnd, 
+                                    FilterDlg.filterType.login, 
+                                    (f) -> {
+                                        f.setCloseEvent(dfe);
+                                        filters.add(f);
+                                        thisPanel.get().add(f);
+                                        thisPanel.get().revalidate();
+                                    });
                             dlg.setVisible(true);
                         });
                     } });
                     add(new JMenuItem() { {
                         setText("По имени...");
                         addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(wnd, FilterDlg.filterType.name, (f) -> {});
+                            FilterDlg dlg = new FilterDlg(
+                                    wnd, 
+                                    FilterDlg.filterType.name, 
+                                    (f) -> {
+                                        f.setCloseEvent(dfe);
+                                        filters.add(f);
+                                        thisPanel.get().add(f);
+                                        thisPanel.get().revalidate();
+                                    });
                             dlg.setVisible(true);
+                        });
+                    } });
+                    add(new JSeparator());
+                    add(new JMenuItem() { {
+                        setText("Очистить");
+                        addActionListener((e) -> {
+                            filters.clear();
+                            if(thisPanel.get().getComponentCount() > 1) {
+                                while(thisPanel.get().getComponentCount() > 1) {
+                                    thisPanel.get().remove(1);
+                                }
+                                thisPanel.get().revalidate();
+                            }
                         });
                     } });
                 } };
