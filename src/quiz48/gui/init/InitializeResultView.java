@@ -79,11 +79,11 @@ public class InitializeResultView {
             InitializeResultQuestionsView.SetCurrentTestResult initTestResultView,
             LinkedList<TestResultWithRating> qrl,
             int page_count,
-            ResultViewState rvs) {
+            ResultViewState rvs,
+            LinkedList<FilterDlg.Filter> filters) {
         main.removeAll();
         main.setLayout(new BorderLayout());
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
-        LinkedList<FilterDlg.Filter> filters = new LinkedList<>();
         
         Pointer<Integer> pageCount = new Pointer<>(page_count);
         Pointer<JButton> prevButton = new Pointer<>(),
@@ -109,7 +109,8 @@ public class InitializeResultView {
                                         qrl.add(entity); 
                                     }, 
                                     newPage.get(), 
-                                    u.getUserEntity());
+                                    u.getUserEntity(),
+                                    filters);
                     pageCount.put(page_info.pageCount);
                 } catch (SQLException ex) {
                 }
@@ -288,6 +289,7 @@ public class InitializeResultView {
                     thisPanel.get().remove(w);
                     filters.remove(w);
                     thisPanel.get().revalidate();
+                    thisPanel.get().repaint();
                 };
                 JPopupMenu fmenu = new JPopupMenu() { {
                     add(new JMenuItem() { {
@@ -301,6 +303,7 @@ public class InitializeResultView {
                                         filters.add(f);
                                         thisPanel.get().add(f);
                                         thisPanel.get().revalidate();
+                                        thisPanel.get().repaint();
                                     });
                             dlg.setVisible(true);
                         });
@@ -316,40 +319,48 @@ public class InitializeResultView {
                                         filters.add(f);
                                         thisPanel.get().add(f);
                                         thisPanel.get().revalidate();
+                                        thisPanel.get().repaint();
                                     });
                             dlg.setVisible(true);
                         });
                     } });
-                    add(new JMenuItem() { {
-                        setText("По логину...");
-                        addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(
-                                    wnd, 
-                                    FilterDlg.filterType.login, 
-                                    (f) -> {
-                                        f.setCloseEvent(dfe);
-                                        filters.add(f);
-                                        thisPanel.get().add(f);
-                                        thisPanel.get().revalidate();
-                                    });
-                            dlg.setVisible(true);
-                        });
-                    } });
-                    add(new JMenuItem() { {
-                        setText("По имени...");
-                        addActionListener((e) -> {
-                            FilterDlg dlg = new FilterDlg(
-                                    wnd, 
-                                    FilterDlg.filterType.name, 
-                                    (f) -> {
-                                        f.setCloseEvent(dfe);
-                                        filters.add(f);
-                                        thisPanel.get().add(f);
-                                        thisPanel.get().revalidate();
-                                    });
-                            dlg.setVisible(true);
-                        });
-                    } });
+                    
+                    
+                    if(u.getUserEntity().isAdmin) {
+                        add(new JMenuItem() { {
+                            setText("По логину...");
+                            addActionListener((e) -> {
+                                FilterDlg dlg = new FilterDlg(
+                                        wnd, 
+                                        FilterDlg.filterType.login, 
+                                        (f) -> {
+                                            f.setCloseEvent(dfe);
+                                            filters.add(f);
+                                            thisPanel.get().add(f);
+                                            thisPanel.get().revalidate();
+                                            thisPanel.get().repaint();
+                                        });
+                                dlg.setVisible(true);
+                            });
+                        } });
+                        add(new JMenuItem() { {
+                            setText("По имени...");
+                            addActionListener((e) -> {
+                                FilterDlg dlg = new FilterDlg(
+                                        wnd, 
+                                        FilterDlg.filterType.name, 
+                                        (f) -> {
+                                            f.setCloseEvent(dfe);
+                                            filters.add(f);
+                                            thisPanel.get().add(f);
+                                            thisPanel.get().revalidate();
+                                            thisPanel.get().repaint();
+                                        });
+                                dlg.setVisible(true);
+                            });
+                        } });
+                    }
+                    
                     add(new JSeparator());
                     add(new JMenuItem() { {
                         setText("Очистить");
@@ -360,6 +371,7 @@ public class InitializeResultView {
                                     thisPanel.get().remove(1);
                                 }
                                 thisPanel.get().revalidate();
+                                thisPanel.get().repaint();
                             }
                         });
                     } });
@@ -372,8 +384,8 @@ public class InitializeResultView {
                         fmenu.show(thisPanel.get(), getX(), getY() + getHeight());
                     });
                 } });
-            } }, BorderLayout.WEST);
-            add(new JPanel(), BorderLayout.CENTER);
+            } }, BorderLayout.CENTER);
+            //add(new JPanel(), BorderLayout.CENTER);
             add(new JPanel() { {
                 setLayout(new FlowLayout());
                 add(new JButton() { {
@@ -446,18 +458,20 @@ public class InitializeResultView {
         
         ResultViewState _rvs = (rvs == null) ? new ResultViewState() : rvs;
         LinkedList<TestResultWithRating> list = new LinkedList<>();
+        LinkedList<FilterDlg.Filter> filters = new LinkedList<>();
+        
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка результатов...");
             try {
                 //LoadingWindow.sleep(2);
                 TestResultWithRating.LoadPageInfo page_info = TestResultWithRating.loadResults(conn, (entity) -> {
                     list.add(entity);
-                }, _rvs.page, u.getUserEntity());
+                }, _rvs.page, u.getUserEntity(), filters);
                 _rvs.page = page_info.currPage;
                 cb.setInformation("Загрузка результатов...успешно");
                 //LoadingWindow.sleep(1);
                 EventQueue.invokeLater(() -> {
-                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, initTestResultView, list, page_info.pageCount, _rvs);
+                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, initTestResultView, list, page_info.pageCount, _rvs, filters);
                 });
             } catch (SQLException ex) {
                 cb.setInformation("Загрузка результатов...ошибка", Color.red);

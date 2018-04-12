@@ -10,8 +10,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.LinkedList;
 import quiz48.Pointer;
 import quiz48.db.ConnectDB;
+import quiz48.gui.FilterDlg;
 
 /**
  *
@@ -19,7 +21,7 @@ import quiz48.db.ConnectDB;
  *///SELECT * FROM QUERY OFFSET 1 ROWS FETCH NEXT 3 ROWS ONLY
 public class TestResultWithRating extends TestResult {
     public interface SQLWhereParams {
-        void SetParams(PreparedStatement s, int startParamIndex);
+        int SetParams(PreparedStatement s, int startParamIndex) throws SQLException;
     }
     
     public interface SQLWhereCreator {
@@ -39,24 +41,53 @@ public class TestResultWithRating extends TestResult {
         this.rating = rating;
     }
     
-    private static int getPageCount(ConnectDB conn) throws SQLException {
-        /**
-         * узнае количество страниц данных в бд
-         */
+    public static LoadPageInfo loadResults(
+            ConnectDB conn, 
+            EntityAccess<TestResultWithRating> ea, 
+            int dbPage, 
+            User u, 
+            LinkedList<FilterDlg.Filter> filters) throws SQLException {
+
+        Pointer<String> sql_where = new Pointer<>("");
+        LinkedList<SQLWhereParams> prs = new LinkedList<>();
+        
+        if(!u.isAdmin) { sql_where.put("qr.user_id=?"); }
+        
+        for(FilterDlg.Filter f : filters) {
+            f.SetSQLWhere((sql, ps) -> {
+                prs.add(ps);
+                sql_where.put(
+                        sql_where.get() + 
+                                (sql_where.get().length() > 0 ? " AND " : "") + 
+                                sql);
+            });
+        }
+        
+        if(sql_where.get().length() > 0) {
+            sql_where.put(" WHERE " + sql_where.get() + " ");
+        }
+        
         Pointer<Integer> count = new Pointer<>(0);
         conn.executeQuery((s) -> {
+            int cnt_p = 1;
+            if(!u.isAdmin) {
+                s.setInt(1, u.ID);
+                ++cnt_p;
+            }
+            
+            for(SQLWhereParams sp : prs) {
+                cnt_p += sp.SetParams(s, cnt_p);
+            }
+            
             ResultSet rs = s.executeQuery();
             if(rs.next()) { count.put(rs.getInt("CNT")); }
             else { throw new SQLException("fail"); }
-        }, "SELECT COUNT(*) AS CNT FROM quiz_result");
+        }, "SELECT COUNT(*) AS CNT FROM quiz_result qr" + sql_where.get());
+
         
-        return count.get();
-    }
-    
-    public static LoadPageInfo loadResults(ConnectDB conn, EntityAccess<TestResultWithRating> ea, int dbPage, User u) throws SQLException {
-        int count = getPageCount(conn);
-        int pageCount = count / PAGE_SIZE;
-        if((pageCount * PAGE_SIZE) < count) { ++pageCount; }
+        //int count = getPageCount(conn);
+        int pageCount = count.get() / PAGE_SIZE;
+        if((pageCount * PAGE_SIZE) < count.get()) { ++pageCount; }
         
         /**
          * указанная страница должна попасть в дипозон

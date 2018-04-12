@@ -12,6 +12,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Window;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -83,7 +84,10 @@ public class FilterDlg extends JDialog {
         
         @Override
         public void SetSQLWhere(SQLWhereCreator i) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            i.where(
+                    "(SELECT COUNT(*) FROM quiz qzt WHERE qzt.id=qr.quiz_id AND name LIKE ?)>0", 
+                    (s, si) -> { s.setString(si, "%" + test + "%"); return 1; }
+            );
         }
         
     }
@@ -106,7 +110,19 @@ public class FilterDlg extends JDialog {
         
         @Override
         public void SetSQLWhere(SQLWhereCreator i) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            i.where(
+                    "qr.date>? AND qr.date<?", 
+                    (s, si) -> { 
+                        s.setTimestamp(si, new Timestamp(date1.getTime()));
+                        if(date2 == null) {
+                            s.setTimestamp(si + 1, new Timestamp(date1.getTime() + 1000 * 60 * 60 * 24));
+                        }
+                        else {
+                            s.setTimestamp(si + 1, new Timestamp(date2.getTime()));
+                        }
+                        return 2; 
+                    }
+            );
         }
         
     }
@@ -121,7 +137,10 @@ public class FilterDlg extends JDialog {
         
         @Override
         public void SetSQLWhere(SQLWhereCreator i) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            i.where(
+                    "(SELECT COUNT(*) FROM users usrs0 WHERE usrs0.id=qr.user_id AND login LIKE ?)>0", 
+                    (s, si) -> { s.setString(si, "%" + login + "%"); return 1; }
+            );
         }
         
     }
@@ -136,7 +155,10 @@ public class FilterDlg extends JDialog {
         
         @Override
         public void SetSQLWhere(SQLWhereCreator i) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            i.where(
+                    "(SELECT COUNT(*) FROM users usrs0 WHERE usrs0.id=qr.user_id AND name LIKE ?)>0", 
+                    (s, si) -> { s.setString(si, "%" + name + "%"); return 1; }
+            );
         }
         
     }
