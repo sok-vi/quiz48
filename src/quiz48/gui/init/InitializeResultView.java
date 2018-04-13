@@ -53,6 +53,7 @@ public class InitializeResultView {
     
     public final static class ResultViewState {
         public int page = 0;
+        public LinkedList<FilterDlg.Filter> filters = new LinkedList<>();
     }
     
     public interface ShowTestResultView {
@@ -79,8 +80,7 @@ public class InitializeResultView {
             InitializeResultQuestionsView.SetCurrentTestResult initTestResultView,
             LinkedList<TestResultWithRating> qrl,
             int page_count,
-            ResultViewState rvs,
-            LinkedList<FilterDlg.Filter> filters) {
+            ResultViewState rvs) {
         main.removeAll();
         main.setLayout(new BorderLayout());
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
@@ -96,7 +96,7 @@ public class InitializeResultView {
             Pointer<Integer> newPage = new Pointer<>(page);
             if(newPage.get() >= pageCount.get()) { newPage.put(pageCount.get() - 1); }
             if(newPage.get() < 0) { newPage.put(0); }
-            if((int)newPage.get() == (int)rvs.page) { return; }
+            //if((int)newPage.get() == (int)rvs.page) { return; }
             
             TaskQueue.instance().addNewTask(() -> {
                 LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка новой страницы результатов...");
@@ -110,9 +110,11 @@ public class InitializeResultView {
                                     }, 
                                     newPage.get(), 
                                     u.getUserEntity(),
-                                    filters);
+                                    rvs.filters);
                     pageCount.put(page_info.pageCount);
-                } catch (SQLException ex) {
+                } catch (SQLException ex) { 
+                    LoadingWindow.sleep(5);
+                    cb.setInformation("Загрузка новой страницы результатов...ошибка", Color.red);
                 }
                 EventQueue.invokeLater(() -> {
                     rvs.page = newPage.get();
@@ -287,10 +289,18 @@ public class InitializeResultView {
                 Pointer<JPanel> thisPanel = new Pointer<>(this);
                 final FilterDlg.DeleteFilterEvent dfe = (w) -> {
                     thisPanel.get().remove(w);
-                    filters.remove(w);
+                    rvs.filters.remove(w);
                     thisPanel.get().revalidate();
                     thisPanel.get().repaint();
+                    load.setCurrPage(rvs.page);
                 };
+                
+                for(FilterDlg.Filter nf : rvs.filters) {
+                    FilterDlg.FilterWidget nfw = (FilterDlg.FilterWidget)nf;
+                    thisPanel.get().add(nfw);
+                    nfw.setCloseEvent(dfe);
+                }
+                
                 JPopupMenu fmenu = new JPopupMenu() { {
                     add(new JMenuItem() { {
                         setText("По названию теста...");
@@ -300,10 +310,11 @@ public class InitializeResultView {
                                     FilterDlg.filterType.test, 
                                     (f) -> {
                                         f.setCloseEvent(dfe);
-                                        filters.add(f);
+                                        rvs.filters.add(f);
                                         thisPanel.get().add(f);
                                         thisPanel.get().revalidate();
                                         thisPanel.get().repaint();
+                                        load.setCurrPage(rvs.page);
                                     });
                             dlg.setVisible(true);
                         });
@@ -316,10 +327,11 @@ public class InitializeResultView {
                                     FilterDlg.filterType.date, 
                                     (f) -> {
                                         f.setCloseEvent(dfe);
-                                        filters.add(f);
+                                        rvs.filters.add(f);
                                         thisPanel.get().add(f);
                                         thisPanel.get().revalidate();
                                         thisPanel.get().repaint();
+                                        load.setCurrPage(rvs.page);
                                     });
                             dlg.setVisible(true);
                         });
@@ -335,10 +347,11 @@ public class InitializeResultView {
                                         FilterDlg.filterType.login, 
                                         (f) -> {
                                             f.setCloseEvent(dfe);
-                                            filters.add(f);
+                                            rvs.filters.add(f);
                                             thisPanel.get().add(f);
                                             thisPanel.get().revalidate();
                                             thisPanel.get().repaint();
+                                            load.setCurrPage(rvs.page);
                                         });
                                 dlg.setVisible(true);
                             });
@@ -351,10 +364,11 @@ public class InitializeResultView {
                                         FilterDlg.filterType.name, 
                                         (f) -> {
                                             f.setCloseEvent(dfe);
-                                            filters.add(f);
+                                            rvs.filters.add(f);
                                             thisPanel.get().add(f);
                                             thisPanel.get().revalidate();
                                             thisPanel.get().repaint();
+                                            load.setCurrPage(rvs.page);
                                         });
                                 dlg.setVisible(true);
                             });
@@ -365,13 +379,14 @@ public class InitializeResultView {
                     add(new JMenuItem() { {
                         setText("Очистить");
                         addActionListener((e) -> {
-                            filters.clear();
+                            rvs.filters.clear();
                             if(thisPanel.get().getComponentCount() > 1) {
                                 while(thisPanel.get().getComponentCount() > 1) {
                                     thisPanel.get().remove(1);
                                 }
                                 thisPanel.get().revalidate();
                                 thisPanel.get().repaint();
+                                load.setCurrPage(rvs.page);
                             }
                         });
                     } });
@@ -383,7 +398,7 @@ public class InitializeResultView {
                     addActionListener((e) -> {
                         fmenu.show(thisPanel.get(), getX(), getY() + getHeight());
                     });
-                } });
+                } }, 0);
             } }, BorderLayout.CENTER);
             //add(new JPanel(), BorderLayout.CENTER);
             add(new JPanel() { {
@@ -456,9 +471,8 @@ public class InitializeResultView {
             InitializeResultQuestionsView.SetCurrentTestResult initTestResultView,
             ResultViewState rvs) {
         
-        ResultViewState _rvs = (rvs == null) ? new ResultViewState() : rvs;
         LinkedList<TestResultWithRating> list = new LinkedList<>();
-        LinkedList<FilterDlg.Filter> filters = new LinkedList<>();
+        ResultViewState _rvs = (rvs == null) ? new ResultViewState() : rvs;
         
         TaskQueue.instance().addNewTask(() -> {
             LoadingWindow.Callback cb = LoadingWindow.showLoadingWindow(wnd, "Загрузка результатов...");
@@ -466,12 +480,12 @@ public class InitializeResultView {
                 //LoadingWindow.sleep(2);
                 TestResultWithRating.LoadPageInfo page_info = TestResultWithRating.loadResults(conn, (entity) -> {
                     list.add(entity);
-                }, _rvs.page, u.getUserEntity(), filters);
+                }, _rvs.page, u.getUserEntity(), _rvs.filters);
                 _rvs.page = page_info.currPage;
                 cb.setInformation("Загрузка результатов...успешно");
                 //LoadingWindow.sleep(1);
                 EventQueue.invokeLater(() -> {
-                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, initTestResultView, list, page_info.pageCount, _rvs, filters);
+                    implInitialize(wnd, main, bottom, initStartWindow, u, conn, initTestResultView, list, page_info.pageCount, _rvs);
                 });
             } catch (SQLException ex) {
                 cb.setInformation("Загрузка результатов...ошибка", Color.red);

@@ -103,15 +103,18 @@ public class TestResultWithRating extends TestResult {
         users.put(u.ID, u);
         
         conn.executeQuery((s) -> {
-            if(u.isAdmin) {
-                s.setInt(1, page.get() * PAGE_SIZE);
-                s.setInt(2, PAGE_SIZE);
-            }
-            else {
+            int cnt_p = 1;
+            if(!u.isAdmin) {
                 s.setInt(1, u.ID);
-                s.setInt(2, page.get() * PAGE_SIZE);
-                s.setInt(3, PAGE_SIZE);
+                ++cnt_p;
             }
+            
+            for(SQLWhereParams sp : prs) {
+                cnt_p += sp.SetParams(s, cnt_p);
+            }
+            
+            s.setInt(cnt_p++, page.get() * PAGE_SIZE);
+            s.setInt(cnt_p, PAGE_SIZE);
             
             ResultSet rs = s.executeQuery();
             while(rs.next()) {
@@ -148,7 +151,7 @@ public class TestResultWithRating extends TestResult {
         }, String.format("SELECT qr.*, "
                 + "(SELECT SUM(q1.weight) FROM query q1 WHERE q1.quiz_id=qr.quiz_id) AS SUM_W, "
                 + "(SELECT SUM(q2.weight) FROM query_result qr2 INNER JOIN query q2 ON q2.id=qr2.query_id WHERE qr2.quiz_result_id=qr.id AND qr2.fail=0) AS SUM_W_ACT "
-                + "FROM quiz_result qr%1$s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", u.isAdmin ? "" : " WHERE qr.user_id=?"));
+                + "FROM quiz_result qr%1$s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", sql_where.get()));
         
         return new LoadPageInfo(page.get(), pageCount);
     }
