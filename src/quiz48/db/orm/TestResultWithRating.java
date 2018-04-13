@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Set;
 import quiz48.Pointer;
 import quiz48.db.ConnectDB;
 import quiz48.gui.FilterDlg;
@@ -51,16 +52,47 @@ public class TestResultWithRating extends TestResult {
         Pointer<String> sql_where = new Pointer<>("");
         LinkedList<SQLWhereParams> prs = new LinkedList<>();
         
-        if(!u.isAdmin) { sql_where.put("qr.user_id=?"); }
+        class pair {
+            public SQLWhereParams swp;
+            public String sql;
+        }
+        
+        HashMap<Integer, LinkedList<pair>> where_map = new HashMap<>();
         
         for(FilterDlg.Filter f : filters) {
             f.SetSQLWhere((sql, ps) -> {
-                prs.add(ps);
-                sql_where.put(
-                        sql_where.get() + 
-                                (sql_where.get().length() > 0 ? " AND " : "") + 
-                                sql);
+                //prs.add(ps);
+                int hash = f.getClass().getName().hashCode();
+                if(!where_map.containsKey(hash)) {
+                    where_map.put(hash, new LinkedList<>());
+                }
+                where_map.get(hash).add(new pair() { { swp = ps; this.sql = sql; } });
             });
+        }
+        
+        if(!u.isAdmin) { sql_where.put("qr.user_id=?"); }
+        
+        if(where_map.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("(");
+            boolean _g_first = true;
+            for(Integer key : where_map.keySet()) {
+                LinkedList<pair> item = where_map.get(key);
+                if(_g_first) { _g_first = false; }
+                else { sb.append(" AND "); }
+                sb.append("(");
+                boolean _first = true;
+                for(pair pitem : item) {
+                    if(_first) { _first = false; }
+                    else { sb.append(" OR "); }
+                    sb.append(pitem.sql);
+                    prs.add(pitem.swp);
+                }
+                sb.append(")");
+            }
+            sb.append(")");
+            
+            sql_where.put(sql_where.get() + " AND " + sb.toString());
         }
         
         if(sql_where.get().length() > 0) {
@@ -70,13 +102,13 @@ public class TestResultWithRating extends TestResult {
         Pointer<Integer> count = new Pointer<>(0);
         conn.executeQuery((s) -> {
             int cnt_p = 1;
+            for(SQLWhereParams sp : prs) {
+                cnt_p += sp.SetParams(s, cnt_p);
+            }
+            
             if(!u.isAdmin) {
                 s.setInt(1, u.ID);
                 ++cnt_p;
-            }
-            
-            for(SQLWhereParams sp : prs) {
-                cnt_p += sp.SetParams(s, cnt_p);
             }
             
             ResultSet rs = s.executeQuery();
