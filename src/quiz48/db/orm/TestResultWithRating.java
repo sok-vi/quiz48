@@ -54,7 +54,7 @@ public class TestResultWithRating extends TestResult {
         
         class pair {
             public SQLWhereParams swp;
-            public String sql;
+            public String wsql;
         }
         
         HashMap<Integer, LinkedList<pair>> where_map = new HashMap<>();
@@ -66,7 +66,7 @@ public class TestResultWithRating extends TestResult {
                 if(!where_map.containsKey(hash)) {
                     where_map.put(hash, new LinkedList<>());
                 }
-                where_map.get(hash).add(new pair() { { swp = ps; this.sql = sql; } });
+                where_map.get(hash).add(new pair() { { swp = ps; wsql = sql; } });
             });
         }
         
@@ -85,14 +85,14 @@ public class TestResultWithRating extends TestResult {
                 for(pair pitem : item) {
                     if(_first) { _first = false; }
                     else { sb.append(" OR "); }
-                    sb.append(pitem.sql);
+                    sb.append(pitem.wsql);
                     prs.add(pitem.swp);
                 }
                 sb.append(")");
             }
             sb.append(")");
             
-            sql_where.put(sql_where.get() + " AND " + sb.toString());
+            sql_where.put((sql_where.get().length() > 0 ? sql_where.get() + " AND " : "") + sb.toString());
         }
         
         if(sql_where.get().length() > 0) {
@@ -102,13 +102,14 @@ public class TestResultWithRating extends TestResult {
         Pointer<Integer> count = new Pointer<>(0);
         conn.executeQuery((s) -> {
             int cnt_p = 1;
-            for(SQLWhereParams sp : prs) {
-                cnt_p += sp.SetParams(s, cnt_p);
-            }
             
             if(!u.isAdmin) {
                 s.setInt(1, u.ID);
                 ++cnt_p;
+            }
+            
+            for(SQLWhereParams sp : prs) {
+                cnt_p += sp.SetParams(s, cnt_p);
             }
             
             ResultSet rs = s.executeQuery();
